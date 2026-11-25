@@ -1,0 +1,42 @@
+{
+  "chunkBytes": 32768,
+  "requestLimitBytes": 33554432,
+  "vectors": [
+    {
+      "name": "single document exceeds one encoded Connect message",
+      "documentTemplate": {
+        "ref": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "ownerId": "owner-one",
+          "documentId": "document-one"
+        },
+        "revision": "opaque-revision-one",
+        "title": "Specification",
+        "text": "",
+        "writable": true
+      },
+      "unit": "\u0000🦉\"\\\n",
+      "repeat": 2200000,
+      "required": [
+        "Encoded typed document exceeds 33554432 bytes.",
+        "Every chunk is at most 32768 raw bytes.",
+        "Arbitrary UTF-8 boundaries and JSON escaping reconstruct exact text.",
+        "No whole-document or history-size ceiling is imposed on reads."
+      ]
+    },
+    {
+      "name": "save character limit counts Unicode scalar values",
+      "unit": "🦉",
+      "repeat": 2000000,
+      "required": [
+        "Exactly 2000000 scalar values passes SaveCommand string max_len.",
+        "2000001 scalar values fails before mutation.",
+        "UTF-8 and escaped JSON encoding remain within 33554432 byte request cap for compact canonical JSON."
+      ]
+    }
+  ]
+}

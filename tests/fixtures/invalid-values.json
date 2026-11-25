@@ -1,0 +1,123 @@
+{
+  "cases": [
+    {
+      "type": "LineRange",
+      "value": {
+        "startLine": 3,
+        "endLine": 2
+      },
+      "valid": false
+    },
+    {
+      "type": "FeedbackRecord",
+      "value": {
+        "request": {
+          "requestId": "feedback-one",
+          "ref": {
+            "session": {
+              "providerId": "host-one",
+              "projectId": "project-one",
+              "conversationId": "chat-one"
+            },
+            "ownerId": "owner-one",
+            "documentId": "document-one"
+          },
+          "baseRevision": "opaque-revision-one",
+          "bufferIdentity": "unsaved-buffer-one",
+          "range": {
+            "startLine": 2,
+            "endLine": 2
+          },
+          "selectedText": "Unicode 🦉 café; changed locally.",
+          "message": "Is this something we really want?"
+        },
+        "generation": "generation-one",
+        "state": "FEEDBACK_STATE_ANSWERED"
+      },
+      "valid": false
+    },
+    {
+      "type": "FeedbackRecord",
+      "value": {
+        "request": {
+          "requestId": "feedback-one",
+          "ref": {
+            "session": {
+              "providerId": "host-one",
+              "projectId": "project-one",
+              "conversationId": "chat-one"
+            },
+            "ownerId": "owner-one",
+            "documentId": "document-one"
+          },
+          "baseRevision": "opaque-revision-one",
+          "bufferIdentity": "unsaved-buffer-one",
+          "range": {
+            "startLine": 2,
+            "endLine": 2
+          },
+          "selectedText": "Unicode 🦉 café; changed locally.",
+          "message": "Is this something we really want?"
+        },
+        "generation": "generation-one",
+        "state": 99
+      },
+      "valid": false
+    },
+    {
+      "type": "FeedbackRecord",
+      "value": {
+        "request": {
+          "requestId": "feedback-one",
+          "ref": {
+            "session": {
+              "providerId": "host-one",
+              "projectId": "project-one",
+              "conversationId": "chat-one"
+            },
+            "ownerId": "owner-one",
+            "documentId": "document-one"
+          },
+          "baseRevision": "opaque-revision-one",
+          "bufferIdentity": "unsaved-buffer-one",
+          "range": {
+            "startLine": 2,
+            "endLine": 2
+          },
+          "selectedText": "Unicode 🦉 café; changed locally.",
+          "message": "Is this something we really want?"
+        },
+        "generation": "generation-one",
+        "state": "FEEDBACK_STATE_UNCERTAIN"
+      },
+      "valid": false
+    },
+    {
+      "type": "SyncResponse",
+      "value": {
+        "snapshotId": "s",
+        "sequence": "1",
+        "header": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "type": "ValueChunk",
+      "value": {
+        "transferId": "t",
+        "kind": "VALUE_KIND_DOCUMENT",
+        "totalBytes": "1",
+        "sha256": "WZHzXZ6qXgGZqCTpUM1qdAXv00qaV2XZbiY8AHtejGo=",
+        "data": "eyJyZWYiOnsic2Vzc2lvbiI6eyJwcm92aWRlcklkIjoiaG9zdC1vbmUiLCJwcm9qZWN0SWQiOiJwcm9qZWN0LW9uZSIsImNvbnZlcnNhdGlvbklkIjoiY2hhdC1vbmUifSwib3duZXJJZCI6Im93bmVyLW9uZSIsImRvY3VtZW50SWQiOiJkb2N1bWVudC1vbmUifSwicmV2aXNpb24iOiJvcGFxdWUtcmV2aXNpb24tb25lIiwidGl0bGUiOiJTcGVjaWZpY2F0aW9uIiwidGV4dCI6IiMgRHJhZnRcblVuaWNvZGUg8J+miSBjYWbDqTsgcXVvdGUgXCIgYW5kIHNsYXNoIFxcLlxuIiwid3JpdGFibGUiOnRydWV9",
+        "valueComplete": true
+      },
+      "valid": false
+    }
+  ]
+}

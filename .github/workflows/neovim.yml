@@ -1,0 +1,38 @@
+name: Native Neovim
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  editor:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.5'
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/interop-neovim
+          key: interop-neovim-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/install-test-neovim') }}
+      - name: Install the pinned editor fixture
+        run: |
+          bash scripts/install-test-neovim "$RUNNER_TEMP/interop-neovim"
+          echo "$RUNNER_TEMP/interop-neovim/bin" >> "$GITHUB_PATH"
+      - run: bun run test:editor
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editor-evidence-${{ matrix.os }}
+          path: artifacts/editor

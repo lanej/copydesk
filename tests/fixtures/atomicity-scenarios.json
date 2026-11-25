@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "case": "crash before authoritative transaction commits",
+      "expected": "Neither mutation nor witness survives; exact retry is still subject to current revision and workflow guards."
+    },
+    {
+      "case": "crash after commit before IPC reply",
+      "expected": "Both mutation and operation-specific witness survive; exact retry returns original accepted revision."
+    },
+    {
+      "case": "another writer changes document after committed save",
+      "expected": "Retry returns original witness without overwriting the newer document or projection."
+    },
+    {
+      "case": "another operation writes identical candidate text",
+      "expected": "Text equality cannot create this operation witness or prove acceptance; stale token rejects, or incomplete historical operation remains uncertain."
+    },
+    {
+      "case": "operation ID reused with different payload",
+      "expected": "Reject OPERATION_ID_REUSED without another write."
+    },
+    {
+      "case": "old incomplete journal record without authoritative witness",
+      "expected": "Uncertain, including when current text equals candidate; no automatic effect replay."
+    }
+  ]
+}

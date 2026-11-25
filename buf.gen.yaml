@@ -1,0 +1,8 @@
+version: v2
+plugins:
+  - local: [bun, --bun, node_modules/.bin/protoc-gen-es]
+    include_imports: true
+    out: src/generated
+    opt:
+      - target=ts
+      - import_extension=js

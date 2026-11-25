@@ -1,0 +1,66 @@
+name: Protobuf quality
+on:
+  pull_request:
+    paths:
+      - '**/*.proto'
+      - '**/buf.yaml'
+      - '**/buf.work.yaml'
+      - '**/buf.lock'
+      - 'api-baseline/**'
+      - '.protobuf-quality.json'
+      - '.protobuf-quality/main.go'
+      - '.protobuf-quality/go.mod'
+      - '.protobuf-quality/go.sum'
+      - '.source-code.json'
+      - 'scripts/check-protobuf.py'
+      - 'scripts/check-source-code.py'
+      - '.agents/skills/source-code-lifecycle/references/stages.json'
+      - '.github/workflows/protobuf-quality.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - '**/*.proto'
+      - '**/buf.yaml'
+      - '**/buf.work.yaml'
+      - '**/buf.lock'
+      - 'api-baseline/**'
+      - '.protobuf-quality.json'
+      - '.protobuf-quality/main.go'
+      - '.protobuf-quality/go.mod'
+      - '.protobuf-quality/go.sum'
+      - '.source-code.json'
+      - 'scripts/check-protobuf.py'
+      - 'scripts/check-source-code.py'
+      - '.agents/skills/source-code-lifecycle/references/stages.json'
+      - '.github/workflows/protobuf-quality.yml'
+permissions:
+  contents: read
+jobs:
+  protobuf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: '.protobuf-quality/go.mod'
+          cache-dependency-path: '.protobuf-quality/go.sum'
+      - uses: bufbuild/buf-action@v1
+        with:
+          version: '1.75.0'
+          setup_only: true
+      - run: python3 scripts/check-protobuf.py tools
+      - name: Select the published or initial schema baseline
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git cat-file -e "$BASE_REF:buf.yaml" 2>/dev/null; then
+            echo "PROTOBUF_AGAINST=.git#ref=$BASE_REF" >> "$GITHUB_ENV"
+          else
+            echo "PROTOBUF_AGAINST=api-baseline/editorinterop-v1.binpb" >> "$GITHUB_ENV"
+          fi
+      - run: python3 scripts/check-source-code.py protobuf

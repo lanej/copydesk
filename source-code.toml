@@ -14,6 +14,9 @@ enabled = true
 rollout = "strict"
 projects = ["tsconfig.json"]
 
+[checks.protobuf]
+enabled = true
+
 [installed]
 version = 1
 mode = "tracked"
@@ -23,12 +26,13 @@ authority = "owned"
 adoption = "new"
 stage = "beta"
 policy_version = "1.1.0"
-skills = ["architecture", "builder", "cli", "code-comments", "data-change-planning", "git", "javascript", "library-code-comments", "pull-request", "ship", "source-code-lifecycle", "testing", "typescript"]
+skills = ["architecture", "builder", "cli", "code-comments", "data-change-planning", "git", "javascript", "library-code-comments", "protobuf", "pull-request", "ship", "source-code-lifecycle", "testing", "typescript"]
 agents = "both"
 pr_template = "github"
 kind = "library"
 detect_languages = true
 typescript_profile = true
+protobuf_profile = true
 
 [installed.skill_versions]
 architecture = "1.2.3"
@@ -39,6 +43,7 @@ data-change-planning = "1.0.0"
 git = "1.1.0"
 javascript = "1.1.3"
 library-code-comments = "1.0.1"
+protobuf = "1.0.3"
 pull-request = "1.0.0"
 ship = "1.0.0"
 source-code-lifecycle = "1.2.6"
