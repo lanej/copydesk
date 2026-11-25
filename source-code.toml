@@ -1,0 +1,15 @@
+schema_version = 1
+stage = "beta"
+kind = "library"
+authority = "owned"
+adoption = "new"
+mode = "tracked"
+skill_storage = "linked"
+agents = "both"
+pr_template = "github"
+detect_languages = true
+
+[checks.typescript]
+enabled = true
+rollout = "strict"
+projects = ["tsconfig.json"]
