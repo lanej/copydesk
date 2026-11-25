@@ -1,0 +1,31 @@
+{
+  "name": "@lanej/editor-interop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.5"
+  },
+  "exports": "./src/index.ts",
+  "files": [
+    "src",
+    "resources",
+    "schemas",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "bun scripts/check-typescript.mjs all",
+    "typecheck": "bun scripts/check-typescript.mjs typecheck",
+    "lint": "bun scripts/check-typescript.mjs lint",
+    "format": "bun scripts/check-typescript.mjs fmt",
+    "test": "bun test --pass-with-no-tests"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "^5.9.3"
+  }
+}
