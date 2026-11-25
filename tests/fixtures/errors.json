@@ -1,0 +1,55 @@
+{
+  "cases": [
+    {
+      "case": "wrong bearer credential",
+      "httpStatus": 401,
+      "body": {
+        "code": "unauthenticated",
+        "message": "Invalid editor credential"
+      },
+      "hostEffects": 0
+    },
+    {
+      "case": "wrong activation generation",
+      "httpStatus": 400,
+      "body": {
+        "code": "failed_precondition",
+        "message": "The editor activation changed; reconnect explicitly"
+      },
+      "hostEffects": 0
+    },
+    {
+      "case": "incompatible application major",
+      "httpStatus": 400,
+      "body": {
+        "code": "failed_precondition",
+        "message": "No compatible editor-interop application version"
+      },
+      "hostEffects": 0
+    },
+    {
+      "case": "expired read cursor",
+      "httpStatus": 404,
+      "body": {
+        "code": "not_found",
+        "message": "Snapshot expired; start a new synchronization"
+      },
+      "clientEffect": "Discard only staged pages; keep prior buffers and receipts"
+    },
+    {
+      "case": "encoded request exceeds 33554432 bytes",
+      "httpStatus": 429,
+      "body": {
+        "code": "resource_exhausted",
+        "message": "Encoded request exceeds the message limit"
+      },
+      "hostEffects": 0
+    },
+    {
+      "case": "response connection lost after save commit",
+      "httpStatus": null,
+      "body": null,
+      "clientEffect": "Keep exact pending SaveCommand and modified text; explicitly retry same operation ID to read its atomic witness"
+    }
+  ]
+}

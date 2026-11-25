@@ -1,0 +1,222 @@
+{
+  "headers": {
+    "content-type": "application/json",
+    "connect-protocol-version": "1",
+    "authorization": "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "connection": "close"
+  },
+  "calls": [
+    {
+      "method": "Sync",
+      "requestType": "SyncRequest",
+      "responseType": "SyncResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        }
+      },
+      "response": {
+        "snapshotId": "snapshot-one",
+        "sequence": "1",
+        "header": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "activeOwnerId": "owner-one"
+        },
+        "nextCursor": "sync-cursor-1"
+      }
+    },
+    {
+      "method": "Sync",
+      "requestType": "SyncRequest",
+      "responseType": "SyncResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "cursor": "sync-cursor-1"
+      },
+      "response": {
+        "snapshotId": "snapshot-one",
+        "sequence": "2",
+        "item": {
+          "transferId": "document-transfer-one",
+          "kind": "VALUE_KIND_DOCUMENT",
+          "totalBytes": "373",
+          "sha256": "LkAV4G8EVzrjPCKKlpgJ8LE2Dn8zsdy0QdOUC2LYmTo=",
+          "data": "eyJkb2N1bWVudCI6eyJyZWYiOnsic2Vzc2lvbiI6eyJwcm92aWRlcklkIjoiaG9zdC1vbmUiLCJwcm9qZWN0SWQiOiJwcm9qZWN0LW9uZSIsImNvbnZlcnNhdGlvbklkIjoiY2hhdC1vbmUifSwib3duZXJJZCI6Im93bmVyLW9uZSIsImRvY3VtZW50SWQiOiJkb2N1bWVudC1vbmUifSwicmV2aXNpb24iOiJvcGFxdWUtcmV2aXNpb24tb25lIiwidGl0bGUiOiJTcGVjaWZpY2F0aW9uIiwidGV4dCI6IiMgRHJhZnRcblVuaWNvZGUg8A=="
+        },
+        "nextCursor": "sync-cursor-2"
+      }
+    },
+    {
+      "method": "Sync",
+      "requestType": "SyncRequest",
+      "responseType": "SyncResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "cursor": "sync-cursor-2"
+      },
+      "response": {
+        "snapshotId": "snapshot-one",
+        "sequence": "3",
+        "item": {
+          "transferId": "document-transfer-one",
+          "kind": "VALUE_KIND_DOCUMENT",
+          "totalBytes": "373",
+          "sha256": "LkAV4G8EVzrjPCKKlpgJ8LE2Dn8zsdy0QdOUC2LYmTo=",
+          "data": "n6aJIGNhZsOpOyBxdW90ZSBcIiBhbmQgc2xhc2ggXFwuXG4iLCJ3cml0YWJsZSI6dHJ1ZX0sInByb2plY3Rpb25QYXRoIjoiL3ByaXZhdGUvdG1wL2VkaXRvci1pbnRlcm9wLW9uZS9kb2N1bWVudHMvaXNzdWVkLW9uZS5tZCJ9",
+          "offset": "244",
+          "valueComplete": true
+        },
+        "nextCursor": "sync-cursor-3"
+      }
+    },
+    {
+      "method": "Sync",
+      "requestType": "SyncRequest",
+      "responseType": "SyncResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "cursor": "sync-cursor-3"
+      },
+      "response": {
+        "snapshotId": "snapshot-one",
+        "sequence": "4",
+        "item": {
+          "transferId": "feedback-transfer-one",
+          "kind": "VALUE_KIND_FEEDBACK",
+          "totalBytes": "558",
+          "sha256": "CP8GB8Y2+YR6JcoHcC7fDE53CIIEiXJvA5TulFj98HA=",
+          "data": "eyJyZXF1ZXN0Ijp7InJlcXVlc3RJZCI6ImZlZWRiYWNrLW9uZSIsInJlZiI6eyJzZXNzaW9uIjp7InByb3ZpZGVySWQiOiJob3N0LW9uZSIsInByb2plY3RJZCI6InByb2plY3Qtb25lIiwiY29udmVyc2F0aW9uSWQiOiJjaGF0LW9uZSJ9LCJvd25lcklkIjoib3duZXItb25lIiwiZG9jdW1lbnRJZCI6ImRvY3VtZW50LW9uZSJ9LCJiYXNlUmV2aXNpb24iOiJvcGFxdWUtcmV2aXNpb24tb25lIiwiYnVmZmVySWRlbnRpdHkiOiJ1bnNhdmVkLWJ1ZmZlci1vbmUiLCJyYW5nZSI6eyJzdGFydExpbmUiOjIsImVuZExpbmUiOjJ9LCJzZWxlY3RlZFRleHQiOiJVbmljb2RlIPCfpokgY2Fmw6k7IGNoYW5nZWQgbG9jYWxseS4iLCJtZXNzYWdlIjoiSXMgdGhpcyBzb21ldGhpbmcgd2UgcmVhbGx5IHdhbnQ/In0sImdlbmVyYXRpb24iOiJnZW5lcmF0aW9uLW9uZSIsInN0YXRlIjoiRkVFREJBQ0tfU1RBVEVfQU5TV0VSRUQiLCJzdW1tYXJ5IjoiS2VwdCB0aGlzIHJlcXVpcmVtZW50OyBubyBkb2N1bWVudCBlZGl0cy4iLCJyZXNwb25zZUlkIjoicmVhbC10cmFuc2NyaXB0LWVudHJ5LW9uZSJ9",
+          "valueComplete": true
+        },
+        "nextCursor": "sync-cursor-4"
+      }
+    },
+    {
+      "method": "Sync",
+      "requestType": "SyncRequest",
+      "responseType": "SyncResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "cursor": "sync-cursor-4"
+      },
+      "response": {
+        "snapshotId": "snapshot-one",
+        "sequence": "5",
+        "complete": {
+          "documentCount": "1",
+          "feedbackCount": "1"
+        }
+      }
+    },
+    {
+      "method": "Sync",
+      "requestType": "SyncRequest",
+      "responseType": "SyncResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "cursor": "sync-cursor-4"
+      },
+      "response": {
+        "snapshotId": "snapshot-one",
+        "sequence": "5",
+        "complete": {
+          "documentCount": "1",
+          "feedbackCount": "1"
+        }
+      }
+    }
+  ],
+  "expectedDocuments": [
+    {
+      "document": {
+        "ref": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "ownerId": "owner-one",
+          "documentId": "document-one"
+        },
+        "revision": "opaque-revision-one",
+        "title": "Specification",
+        "text": "# Draft\nUnicode 🦉 café; quote \" and slash \\.\n",
+        "writable": true
+      },
+      "projectionPath": "/private/tmp/editor-interop-one/documents/issued-one.md"
+    }
+  ],
+  "expectedFeedback": [
+    {
+      "request": {
+        "requestId": "feedback-one",
+        "ref": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "ownerId": "owner-one",
+          "documentId": "document-one"
+        },
+        "baseRevision": "opaque-revision-one",
+        "bufferIdentity": "unsaved-buffer-one",
+        "range": {
+          "startLine": 2,
+          "endLine": 2
+        },
+        "selectedText": "Unicode 🦉 café; changed locally.",
+        "message": "Is this something we really want?"
+      },
+      "generation": "generation-one",
+      "state": "FEEDBACK_STATE_ANSWERED",
+      "summary": "Kept this requirement; no document edits.",
+      "responseId": "real-transcript-entry-one"
+    }
+  ],
+  "assertion": "No document membership changes before validated SyncComplete; final cursor is replayable."
+}

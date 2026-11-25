@@ -21,6 +21,7 @@ Shared references follow the canonical source immediately; configured entrypoint
 | git | canonical |
 | javascript | canonical |
 | library-code-comments | canonical |
+| protobuf | canonical |
 | pull-request | canonical |
 | ship | canonical |
 | source-code-lifecycle | canonical |
@@ -29,6 +30,6 @@ Shared references follow the canonical source immediately; configured entrypoint
 
 Read the installed project policy at `.agents/skills/source-code-lifecycle/SKILL.md` first, then load the installed skills relevant to the task. Preserve existing repository instructions and required gates.
 
-Use `source-code validate` to check packages and pins. Use `source-code upgrade --dry-run` to review available updates before applying them. Run the installed generated gates: `python3 scripts/check-source-code.py typescript`.
+Use `source-code validate` to check packages and pins. Use `source-code upgrade --dry-run` to review available updates before applying them. Run the installed generated gates: `python3 scripts/check-source-code.py typescript`, `python3 scripts/check-source-code.py protobuf`.
 
 The generated `AGENTS.override.md` routes agents to this policy and the authored project instructions. Other hosts should read that router explicitly when their native instruction discovery does not load it.

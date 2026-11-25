@@ -1,0 +1,16 @@
+{
+  "transitions": {
+    "FEEDBACK_STATE_QUEUED": "FEEDBACK_STATE_UNCERTAIN",
+    "FEEDBACK_STATE_DISPATCHING": "FEEDBACK_STATE_UNCERTAIN",
+    "FEEDBACK_STATE_AWAITING": "FEEDBACK_STATE_UNCERTAIN",
+    "FEEDBACK_STATE_PARKED": "FEEDBACK_STATE_UNCERTAIN",
+    "FEEDBACK_STATE_ANSWERED": "FEEDBACK_STATE_ANSWERED",
+    "FEEDBACK_STATE_FAILED": "FEEDBACK_STATE_FAILED",
+    "FEEDBACK_STATE_UNCERTAIN": "FEEDBACK_STATE_UNCERTAIN"
+  },
+  "assertions": [
+    "Retain original generation and evidence.",
+    "No implicit resubmission.",
+    "Terminal answered and confirmed failed receipts remain terminal."
+  ]
+}

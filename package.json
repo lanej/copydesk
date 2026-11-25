@@ -6,26 +6,48 @@
   "engines": {
     "bun": ">=1.4.5"
   },
-  "exports": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./protocol": "./src/generated/editorinterop/v1/editor_interop_pb.ts",
+    "./neovim": "./resources/nvim/bootstrap.lua",
+    "./testing": "./src/testing.ts"
+  },
   "files": [
     "src",
     "resources",
-    "schemas",
+    "proto",
+    "buf.yaml",
+    "buf.lock",
+    "buf.gen.yaml",
+    "tests/fixtures",
     "LICENSE.md",
-    "README.md"
+    "NOTICE.md",
+    "README.md",
+    "docs"
   ],
   "scripts": {
     "check": "bun scripts/check-typescript.mjs all",
     "typecheck": "bun scripts/check-typescript.mjs typecheck",
     "lint": "bun scripts/check-typescript.mjs lint",
     "format": "bun scripts/check-typescript.mjs fmt",
-    "test": "bun test --pass-with-no-tests"
+    "test": "bun scripts/check-boundary.mjs --self-test && bun scripts/check-boundary.mjs && bun test",
+    "generate": "buf generate && bun acceptance/generate-editor-schema.ts",
+    "check:boundary": "bun scripts/check-boundary.mjs",
+    "test:package": "bun scripts/check-package.mjs",
+    "check:generated": "bun scripts/check-generated.mjs && bun acceptance/generate-editor-schema.ts --check",
+    "test:editor": "bun acceptance/editor.ts"
   },
   "dependencies": {
-    "zod": "4.6.7"
+    "@bufbuild/protobuf": "2.17.0",
+    "@bufbuild/protovalidate": "1.3.0",
+    "@connectrpc/connect": "2.3.0",
+    "@connectrpc/connect-node": "2.3.0",
+    "@connectrpc/validate": "0.2.0"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@bufbuild/buf": "1.75.0",
+    "@bufbuild/protoc-gen-es": "2.17.0"
   }
 }

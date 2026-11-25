@@ -1,0 +1,76 @@
+{
+  "method": "Feedback",
+  "requestType": "FeedbackRequest",
+  "responseType": "FeedbackResponse",
+  "headers": {
+    "content-type": "application/json",
+    "connect-protocol-version": "1",
+    "authorization": "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "connection": "close"
+  },
+  "request": {
+    "context": {
+      "session": {
+        "providerId": "host-one",
+        "projectId": "project-one",
+        "conversationId": "chat-one"
+      },
+      "generation": "generation-one"
+    },
+    "command": {
+      "requestId": "feedback-one",
+      "ref": {
+        "session": {
+          "providerId": "host-one",
+          "projectId": "project-one",
+          "conversationId": "chat-one"
+        },
+        "ownerId": "owner-one",
+        "documentId": "document-one"
+      },
+      "baseRevision": "opaque-revision-one",
+      "bufferIdentity": "unsaved-buffer-one",
+      "range": {
+        "startLine": 2,
+        "endLine": 2
+      },
+      "selectedText": "Unicode 🦉 café; changed locally.",
+      "message": "Is this something we really want?"
+    }
+  },
+  "response": {
+    "value": {
+      "transferId": "feedback-reply-one",
+      "kind": "VALUE_KIND_FEEDBACK",
+      "totalBytes": "461",
+      "sha256": "J1JM/N8lHkgt6pk+cx/gYx1wNEV4kgTKgMgm8o6ikyA=",
+      "data": "eyJyZXF1ZXN0Ijp7InJlcXVlc3RJZCI6ImZlZWRiYWNrLW9uZSIsInJlZiI6eyJzZXNzaW9uIjp7InByb3ZpZGVySWQiOiJob3N0LW9uZSIsInByb2plY3RJZCI6InByb2plY3Qtb25lIiwiY29udmVyc2F0aW9uSWQiOiJjaGF0LW9uZSJ9LCJvd25lcklkIjoib3duZXItb25lIiwiZG9jdW1lbnRJZCI6ImRvY3VtZW50LW9uZSJ9LCJiYXNlUmV2aXNpb24iOiJvcGFxdWUtcmV2aXNpb24tb25lIiwiYnVmZmVySWRlbnRpdHkiOiJ1bnNhdmVkLWJ1ZmZlci1vbmUiLCJyYW5nZSI6eyJzdGFydExpbmUiOjIsImVuZExpbmUiOjJ9LCJzZWxlY3RlZFRleHQiOiJVbmljb2RlIPCfpokgY2Fmw6k7IGNoYW5nZWQgbG9jYWxseS4iLCJtZXNzYWdlIjoiSXMgdGhpcyBzb21ldGhpbmcgd2UgcmVhbGx5IHdhbnQ/In0sImdlbmVyYXRpb24iOiJnZW5lcmF0aW9uLW9uZSIsInN0YXRlIjoiRkVFREJBQ0tfU1RBVEVfUVVFVUVEIn0=",
+      "valueComplete": true
+    }
+  },
+  "expectedValueType": "FeedbackRecord",
+  "expectedValue": {
+    "request": {
+      "requestId": "feedback-one",
+      "ref": {
+        "session": {
+          "providerId": "host-one",
+          "projectId": "project-one",
+          "conversationId": "chat-one"
+        },
+        "ownerId": "owner-one",
+        "documentId": "document-one"
+      },
+      "baseRevision": "opaque-revision-one",
+      "bufferIdentity": "unsaved-buffer-one",
+      "range": {
+        "startLine": 2,
+        "endLine": 2
+      },
+      "selectedText": "Unicode 🦉 café; changed locally.",
+      "message": "Is this something we really want?"
+    },
+    "generation": "generation-one",
+    "state": "FEEDBACK_STATE_QUEUED"
+  }
+}

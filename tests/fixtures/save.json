@@ -1,0 +1,98 @@
+{
+  "headers": {
+    "content-type": "application/json",
+    "connect-protocol-version": "1",
+    "authorization": "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "connection": "close"
+  },
+  "calls": [
+    {
+      "method": "Save",
+      "requestType": "SaveRequest",
+      "responseType": "SaveResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "command": {
+          "operationId": "save-one",
+          "ref": {
+            "session": {
+              "providerId": "host-one",
+              "projectId": "project-one",
+              "conversationId": "chat-one"
+            },
+            "ownerId": "owner-one",
+            "documentId": "document-one"
+          },
+          "expectedRevision": "opaque-revision-one",
+          "text": "# Edited\nUnicode 🦉 café; quote \" and slash \\.\n"
+        }
+      },
+      "response": {
+        "value": {
+          "transferId": "save-transfer-one",
+          "kind": "VALUE_KIND_SAVE_RESULT",
+          "totalBytes": "369",
+          "sha256": "MNs47Q2bYCSmuSbtSpVgJHd9vCvUokrSWik0k3A6aAI=",
+          "data": "eyJhY2NlcHRlZCI6eyJvcGVyYXRpb25JZCI6InNhdmUtb25lIiwiZG9jdW1lbnQiOnsicmVmIjp7InNlc3Npb24iOnsicHJvdmlkZXJJZCI6Imhvc3Qtb25lIiwicHJvamVjdElkIjoicHJvamVjdC1vbmUiLCJjb252ZXJzYXRpb25JZCI6ImNoYXQtb25lIn0sIm93bmVySWQiOiJvd25lci1vbmUiLCJkb2N1bWVudElkIjoiZA=="
+        },
+        "nextCursor": "result-cursor-one"
+      }
+    },
+    {
+      "method": "Result",
+      "requestType": "ResultRequest",
+      "responseType": "ResultResponse",
+      "request": {
+        "context": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "generation": "generation-one"
+        },
+        "cursor": "result-cursor-one"
+      },
+      "response": {
+        "value": {
+          "transferId": "save-transfer-one",
+          "kind": "VALUE_KIND_SAVE_RESULT",
+          "totalBytes": "369",
+          "sha256": "MNs47Q2bYCSmuSbtSpVgJHd9vCvUokrSWik0k3A6aAI=",
+          "data": "b2N1bWVudC1vbmUifSwicmV2aXNpb24iOiJvcGFxdWUtcmV2aXNpb24tdHdvIiwidGl0bGUiOiJTcGVjaWZpY2F0aW9uIiwidGV4dCI6IiMgRWRpdGVkXG5Vbmljb2RlIPCfpokgY2Fmw6k7IHF1b3RlIFwiIGFuZCBzbGFzaCBcXC5cbiIsIndyaXRhYmxlIjp0cnVlfSwiY29tbWl0V2l0bmVzc0lkIjoid2l0bmVzcy1vbmUifX0=",
+          "offset": "184",
+          "valueComplete": true
+        }
+      }
+    }
+  ],
+  "expectedValueType": "SaveResult",
+  "expectedValue": {
+    "accepted": {
+      "operationId": "save-one",
+      "document": {
+        "ref": {
+          "session": {
+            "providerId": "host-one",
+            "projectId": "project-one",
+            "conversationId": "chat-one"
+          },
+          "ownerId": "owner-one",
+          "documentId": "document-one"
+        },
+        "revision": "opaque-revision-two",
+        "title": "Specification",
+        "text": "# Edited\nUnicode 🦉 café; quote \" and slash \\.\n",
+        "writable": true
+      },
+      "commitWitnessId": "witness-one"
+    }
+  }
+}

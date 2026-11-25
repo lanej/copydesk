@@ -1,0 +1,45 @@
+{
+  "method": "Register",
+  "requestType": "RegisterRequest",
+  "responseType": "RegisterResponse",
+  "headers": {
+    "content-type": "application/json",
+    "connect-protocol-version": "1",
+    "authorization": "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "connection": "close"
+  },
+  "request": {
+    "context": {
+      "session": {
+        "providerId": "host-one",
+        "projectId": "project-one",
+        "conversationId": "chat-one"
+      },
+      "generation": "generation-one"
+    },
+    "version": {
+      "major": 1
+    },
+    "editor": {
+      "editorInstanceId": "editor-one",
+      "processId": 1234,
+      "rpcAddress": "/private/tmp/editor-one.sock",
+      "launchId": "launch-one"
+    }
+  },
+  "response": {
+    "context": {
+      "session": {
+        "providerId": "host-one",
+        "projectId": "project-one",
+        "conversationId": "chat-one"
+      },
+      "generation": "generation-one"
+    },
+    "selectedVersion": {
+      "major": 1
+    },
+    "maxRequestBytes": 33554432,
+    "maxChunkBytes": 32768
+  }
+}

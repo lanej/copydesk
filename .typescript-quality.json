@@ -4,13 +4,24 @@
   "projects": [
     "tsconfig.json"
   ],
-  "exclude": [],
+  "exclude": [
+    {
+      "path": "src/generated",
+      "reason": "Authoritative Protobuf-ES output is checked by pinned regeneration, Buf contract checks and the strict compiler."
+    }
+  ],
   "commands": {
-    "legacy": [],
+    "legacy": [
+      [
+        "bun",
+        "run",
+        "check:generated"
+      ]
+    ],
     "test": [
       "bun",
-      "test",
-      "--pass-with-no-tests"
+      "run",
+      "test"
     ],
     "audit": [
       "bun",

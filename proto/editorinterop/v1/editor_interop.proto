@@ -1,0 +1,417 @@
+syntax = "proto3";
+
+package editorinterop.v1;
+
+import "buf/validate/validate.proto";
+
+// All v1 features are required. The application protocol is independent of Connect's version.
+service EditorInteropService {
+  // Verify and bind the sole editor for an issued bearer credential.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Read one immutable complete view through bounded replayable pages.
+  rpc Sync(SyncRequest) returns (SyncResponse);
+  // Commit an explicit candidate with an atomic operation witness.
+  rpc Save(SaveRequest) returns (SaveResponse);
+  // Persist selection feedback without implying delivery or an answer.
+  rpc Feedback(FeedbackRequest) returns (FeedbackResponse);
+  // Retrieve a continuation without repeating the initiating effect.
+  rpc Result(ResultRequest) returns (ResultResponse);
+}
+
+// Application version negotiated separately from the Connect protocol version.
+message ProtocolVersion {
+  uint32 major = 1 [(buf.validate.field).uint32.gt = 0];
+  uint32 minor = 2;
+}
+
+// Opaque host, project and conversation binding; labels and paths are not authority.
+message SessionRef {
+  string provider_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string project_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string conversation_id = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+// Captured session activation rechecked immediately before provider effects.
+message CallContext {
+  SessionRef session = 1 [(buf.validate.field).required = true];
+  string generation = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+// Stable owner-bound document identity, retained when the selected owner changes.
+message DocumentRef {
+  SessionRef session = 1 [(buf.validate.field).required = true];
+  string owner_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string document_id = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+
+// One-based inclusive lines in the exact captured editor buffer.
+message LineRange {
+  uint32 start_line = 1 [(buf.validate.field).uint32.gt = 0];
+  uint32 end_line = 2 [(buf.validate.field).uint32.gt = 0];
+  option (buf.validate.message).cel = {
+    id: "range.ordered"
+    message: "end_line must not precede start_line"
+    expression: "this.end_line >= this.start_line"
+  };
+}
+
+// Host-owned Markdown and opaque revision, without editor filesystem policy.
+message DocumentSnapshot {
+  DocumentRef ref = 1 [(buf.validate.field).required = true];
+  string revision = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string title = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 1000
+  }];
+  string text = 4;
+  bool writable = 5;
+  string reason = 6;
+}
+
+// Core-owned projection metadata; providers return only DocumentSnapshot.
+message DocumentView {
+  DocumentSnapshot document = 1 [(buf.validate.field).required = true];
+  string projection_path = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+}
+
+// An explicit candidate tied to one operation ID and expected host revision.
+message SaveCommand {
+  string operation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  DocumentRef ref = 2 [(buf.validate.field).required = true];
+  string expected_revision = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string text = 4 [(buf.validate.field).string.max_len = 2000000];
+}
+
+// Exact selected unsaved text and instruction; selection is never reread from disk.
+message FeedbackCommand {
+  string request_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  DocumentRef ref = 2 [(buf.validate.field).required = true];
+  string base_revision = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string buffer_identity = 4 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  LineRange range = 5 [(buf.validate.field).required = true];
+  string selected_text = 6 [(buf.validate.field).string.max_len = 100000];
+  string message = 7 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 20000
+  }];
+}
+
+// A committed revision change attributed to a real correlated chat response.
+message DocumentChange {
+  DocumentRef ref = 1 [(buf.validate.field).required = true];
+  string before_revision = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string after_revision = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  LineRange range = 4;
+}
+
+enum FeedbackState {
+  FEEDBACK_STATE_UNSPECIFIED = 0;
+  FEEDBACK_STATE_QUEUED = 1;
+  FEEDBACK_STATE_DISPATCHING = 2;
+  FEEDBACK_STATE_AWAITING = 3;
+  FEEDBACK_STATE_PARKED = 4;
+  FEEDBACK_STATE_ANSWERED = 5;
+  FEEDBACK_STATE_FAILED = 6;
+  FEEDBACK_STATE_UNCERTAIN = 7;
+}
+
+// Durable request evidence; answered and confirmed failed outcomes remain terminal.
+message FeedbackRecord {
+  option (buf.validate.message).cel = {
+    id: "feedback.failure_reason"
+    message: "parked, failed, and uncertain receipts require a reason"
+    expression: "!(this.state in [4, 6, 7]) || size(this.reason) > 0"
+  };
+  FeedbackCommand request = 1 [(buf.validate.field).required = true];
+  string generation = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  FeedbackState state = 3 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  string reason = 4;
+  string summary = 5;
+  string response_id = 6;
+  repeated DocumentChange changes = 7;
+  option (buf.validate.message).cel = {
+    id: "feedback.answer_evidence"
+    message: "answered receipts require a summary and real response ID"
+    expression: "this.state != 5 || (size(this.summary) > 0 && size(this.response_id) > 0)"
+  };
+}
+
+enum RejectionCode {
+  REJECTION_CODE_UNSPECIFIED = 0;
+  REJECTION_CODE_INVALID = 1;
+  REJECTION_CODE_CONFLICT = 2;
+  REJECTION_CODE_PROTECTED = 3;
+  REJECTION_CODE_WRONG_OWNER = 4;
+  REJECTION_CODE_OPERATION_ID_REUSED = 5;
+}
+
+// Acceptance proven by a retained witness atomic with the document mutation.
+message AcceptedSave {
+  string operation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  DocumentSnapshot document = 2 [(buf.validate.field).required = true];
+  string commit_witness_id = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+// Confirmed pre-effect refusal; the optional current document supports reconciliation.
+message RejectedSave {
+  string operation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  RejectionCode code = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  string reason = 3 [(buf.validate.field).string.min_len = 1];
+  DocumentSnapshot current = 4;
+}
+// Incomplete evidence cannot establish acceptance or authorize automatic replay.
+message UncertainSave {
+  string operation_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string reason = 2 [(buf.validate.field).string.min_len = 1];
+}
+// Distinguishes a committed save, a confirmed refusal and an unknown outcome.
+message SaveResult {
+  oneof result {
+    option (buf.validate.oneof).required = true;
+    AcceptedSave accepted = 1;
+    RejectedSave rejected = 2;
+    UncertainSave uncertain = 3;
+  }
+}
+
+// One local editor process verified against a core-issued launch identity.
+message EditorRegistration {
+  string editor_instance_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  uint32 process_id = 2 [(buf.validate.field).uint32.gt = 0];
+  string rpc_address = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+  string launch_id = 4 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+// Binds one issued bearer credential to a verified editor and application version.
+message RegisterRequest {
+  CallContext context = 1 [(buf.validate.field).required = true];
+  ProtocolVersion version = 2 [(buf.validate.field).required = true];
+  EditorRegistration editor = 3 [(buf.validate.field).required = true];
+}
+// Confirms the fixed v1 contract and encoded transport limits.
+message RegisterResponse {
+  CallContext context = 1 [(buf.validate.field).required = true];
+  ProtocolVersion selected_version = 2 [(buf.validate.field).required = true];
+  uint32 max_request_bytes = 3 [(buf.validate.field).uint32.const = 33554432];
+  uint32 max_chunk_bytes = 4 [(buf.validate.field).uint32.const = 32768];
+}
+
+// These types describe completed, schema-validated values carried by chunks.
+enum ValueKind {
+  VALUE_KIND_UNSPECIFIED = 0;
+  VALUE_KIND_DOCUMENT = 1;
+  VALUE_KIND_FEEDBACK = 2;
+  VALUE_KIND_SAVE_RESULT = 3;
+}
+// A bounded fragment of one typed ProtoJSON value, with exact byte integrity.
+message ValueChunk {
+  string transfer_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  ValueKind kind = 2 [(buf.validate.field).enum = {
+    defined_only: true
+    not_in: [0]
+  }];
+  uint64 total_bytes = 3 [(buf.validate.field).uint64.gt = 0];
+  bytes sha256 = 4 [(buf.validate.field).bytes.len = 32];
+  uint64 offset = 5;
+  bytes data = 6 [(buf.validate.field).bytes = {
+    min_len: 1
+    max_len: 32768
+  }];
+  bool value_complete = 7;
+  option (buf.validate.message).cel = {
+    id: "chunk.bounds"
+    message: "chunk must stay within its declared value; completion must match its final byte"
+    expression: "this.offset + uint(size(this.data)) <= this.total_bytes && this.value_complete == (this.offset + uint(size(this.data)) == this.total_bytes)"
+  };
+}
+// Starts an immutable read view; no active owner means there are no documents.
+message SyncHeader {
+  SessionRef session = 1 [(buf.validate.field).required = true];
+  optional string active_owner_id = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+// Exact counts required before reconciling document membership.
+message SyncComplete {
+  uint64 document_count = 1;
+  uint64 feedback_count = 2;
+}
+// Empty cursor starts a new read view; a cursor continues without effects.
+message SyncRequest {
+  CallContext context = 1 [(buf.validate.field).required = true];
+  string cursor = 2 [(buf.validate.field).string.max_len = 200];
+}
+// Sequential header, typed value fragments and complete counts for one snapshot.
+message SyncResponse {
+  option (buf.validate.message).cel = {
+    id: "sync.item_kind"
+    message: "sync contains only document and feedback values"
+    expression: "!has(this.item) || this.item.kind in [1, 2]"
+  };
+  string snapshot_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  uint64 sequence = 2 [(buf.validate.field).uint64.gt = 0];
+  string next_cursor = 3 [(buf.validate.field).string.max_len = 200];
+  oneof part {
+    option (buf.validate.oneof).required = true;
+    SyncHeader header = 4;
+    ValueChunk item = 5;
+    SyncComplete complete = 6;
+  }
+  option (buf.validate.message).cel = {
+    id: "sync.complete_cursor"
+    message: "only a complete snapshot has an empty next_cursor"
+    expression: "has(this.complete) == (size(this.next_cursor) == 0)"
+  };
+}
+// Explicit save request; identical retries resolve the original commit evidence.
+message SaveRequest {
+  CallContext context = 1 [(buf.validate.field).required = true];
+  SaveCommand command = 2 [(buf.validate.field).required = true];
+}
+// First bounded SaveResult fragment; remaining fragments use Result.
+message SaveResponse {
+  ValueChunk value = 1 [(buf.validate.field).required = true];
+  string next_cursor = 2 [(buf.validate.field).string.max_len = 200];
+  option (buf.validate.message).cel = {
+    id: "save.result_page"
+    message: "save returns only a SaveResult; the final chunk has no continuation"
+    expression: "this.value.kind == 3 && this.value.value_complete == (size(this.next_cursor) == 0)"
+  };
+}
+// Persists one exact request before conversational admission; duplicates never dispatch again.
+message FeedbackRequest {
+  CallContext context = 1 [(buf.validate.field).required = true];
+  FeedbackCommand command = 2 [(buf.validate.field).required = true];
+}
+// First bounded feedback receipt fragment, independent of later chat completion.
+message FeedbackResponse {
+  ValueChunk value = 1 [(buf.validate.field).required = true];
+  string next_cursor = 2 [(buf.validate.field).string.max_len = 200];
+  option (buf.validate.message).cel = {
+    id: "feedback.result_page"
+    message: "feedback returns only a FeedbackRecord; the final chunk has no continuation"
+    expression: "this.value.kind == 2 && this.value.value_complete == (size(this.next_cursor) == 0)"
+  };
+}
+// Read-only continuation of one registered editor operation result.
+message ResultRequest {
+  CallContext context = 1 [(buf.validate.field).required = true];
+  string cursor = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+}
+// A bounded operation-result fragment; an empty cursor completes the value.
+message ResultResponse {
+  option (buf.validate.message).cel = {
+    id: "result.kind"
+    message: "result continues only save and feedback replies"
+    expression: "this.value.kind in [2, 3]"
+  };
+  ValueChunk value = 1 [(buf.validate.field).required = true];
+  string next_cursor = 2 [(buf.validate.field).string.max_len = 200];
+  option (buf.validate.message).cel = {
+    id: "result.complete_cursor"
+    message: "the final value chunk has no continuation"
+    expression: "this.value.value_complete == (size(this.next_cursor) == 0)"
+  };
+}
+
+// Private launch file, never projection text or a remote discovery response.
+message ConnectionManifest {
+  ProtocolVersion version = 1 [(buf.validate.field).required = true];
+  string socket_path = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+  string bearer_token = 3 [(buf.validate.field).string.pattern = "^[a-f0-9]{64}$"];
+  CallContext context = 4 [(buf.validate.field).required = true];
+  string launch_id = 5 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 200
+  }];
+  string projection_directory = 6 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+}

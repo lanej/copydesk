@@ -1,0 +1,17 @@
+{
+  "version": {
+    "major": 1
+  },
+  "socketPath": "/private/tmp/editor-interop-one/ipc",
+  "bearerToken": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "context": {
+    "session": {
+      "providerId": "host-one",
+      "projectId": "project-one",
+      "conversationId": "chat-one"
+    },
+    "generation": "generation-one"
+  },
+  "launchId": "launch-one",
+  "projectionDirectory": "/private/tmp/editor-interop-one/documents"
+}

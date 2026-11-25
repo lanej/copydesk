@@ -1,0 +1,1426 @@
+{
+  "ProtocolVersion": {
+    "fields": [
+      {
+        "name": "major",
+        "jsonName": "major",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {
+          "uint32": {
+            "gt": 0
+          }
+        }
+      },
+      {
+        "name": "minor",
+        "jsonName": "minor",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SessionRef": {
+    "fields": [
+      {
+        "name": "provider_id",
+        "jsonName": "providerId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "project_id",
+        "jsonName": "projectId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "conversation_id",
+        "jsonName": "conversationId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "CallContext": {
+    "fields": [
+      {
+        "name": "session",
+        "jsonName": "session",
+        "kind": "message",
+        "message": "SessionRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "generation",
+        "jsonName": "generation",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "DocumentRef": {
+    "fields": [
+      {
+        "name": "session",
+        "jsonName": "session",
+        "kind": "message",
+        "message": "SessionRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "owner_id",
+        "jsonName": "ownerId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "document_id",
+        "jsonName": "documentId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "LineRange": {
+    "fields": [
+      {
+        "name": "start_line",
+        "jsonName": "startLine",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {
+          "uint32": {
+            "gt": 0
+          }
+        }
+      },
+      {
+        "name": "end_line",
+        "jsonName": "endLine",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {
+          "uint32": {
+            "gt": 0
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {
+      "cel": [
+        {
+          "id": "range.ordered",
+          "message": "end_line must not precede start_line",
+          "expression": "this.end_line >= this.start_line"
+        }
+      ]
+    }
+  },
+  "DocumentSnapshot": {
+    "fields": [
+      {
+        "name": "ref",
+        "jsonName": "ref",
+        "kind": "message",
+        "message": "DocumentRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "revision",
+        "jsonName": "revision",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "title",
+        "jsonName": "title",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "1000"
+          }
+        }
+      },
+      {
+        "name": "text",
+        "jsonName": "text",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "writable",
+        "jsonName": "writable",
+        "kind": "scalar",
+        "scalar": 8,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "reason",
+        "jsonName": "reason",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "DocumentView": {
+    "fields": [
+      {
+        "name": "document",
+        "jsonName": "document",
+        "kind": "message",
+        "message": "DocumentSnapshot",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "projection_path",
+        "jsonName": "projectionPath",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "4096"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SaveCommand": {
+    "fields": [
+      {
+        "name": "operation_id",
+        "jsonName": "operationId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "ref",
+        "jsonName": "ref",
+        "kind": "message",
+        "message": "DocumentRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "expected_revision",
+        "jsonName": "expectedRevision",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "text",
+        "jsonName": "text",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "2000000"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "FeedbackCommand": {
+    "fields": [
+      {
+        "name": "request_id",
+        "jsonName": "requestId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "ref",
+        "jsonName": "ref",
+        "kind": "message",
+        "message": "DocumentRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "base_revision",
+        "jsonName": "baseRevision",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "buffer_identity",
+        "jsonName": "bufferIdentity",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "range",
+        "jsonName": "range",
+        "kind": "message",
+        "message": "LineRange",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "selected_text",
+        "jsonName": "selectedText",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "100000"
+          }
+        }
+      },
+      {
+        "name": "message",
+        "jsonName": "message",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "20000"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "DocumentChange": {
+    "fields": [
+      {
+        "name": "ref",
+        "jsonName": "ref",
+        "kind": "message",
+        "message": "DocumentRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "before_revision",
+        "jsonName": "beforeRevision",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "after_revision",
+        "jsonName": "afterRevision",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "range",
+        "jsonName": "range",
+        "kind": "message",
+        "message": "LineRange",
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "FeedbackRecord": {
+    "fields": [
+      {
+        "name": "request",
+        "jsonName": "request",
+        "kind": "message",
+        "message": "FeedbackCommand",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "generation",
+        "jsonName": "generation",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "state",
+        "jsonName": "state",
+        "kind": "enum",
+        "values": {
+          "FEEDBACK_STATE_UNSPECIFIED": 0,
+          "FEEDBACK_STATE_QUEUED": 1,
+          "FEEDBACK_STATE_DISPATCHING": 2,
+          "FEEDBACK_STATE_AWAITING": 3,
+          "FEEDBACK_STATE_PARKED": 4,
+          "FEEDBACK_STATE_ANSWERED": 5,
+          "FEEDBACK_STATE_FAILED": 6,
+          "FEEDBACK_STATE_UNCERTAIN": 7
+        },
+        "optional": false,
+        "rules": {
+          "enum": {
+            "definedOnly": true,
+            "notIn": [
+              0
+            ]
+          }
+        }
+      },
+      {
+        "name": "reason",
+        "jsonName": "reason",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "summary",
+        "jsonName": "summary",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "response_id",
+        "jsonName": "responseId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "changes",
+        "jsonName": "changes",
+        "kind": "list",
+        "message": "DocumentChange",
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {
+      "cel": [
+        {
+          "id": "feedback.failure_reason",
+          "message": "parked, failed, and uncertain receipts require a reason",
+          "expression": "!(this.state in [4, 6, 7]) || size(this.reason) > 0"
+        },
+        {
+          "id": "feedback.answer_evidence",
+          "message": "answered receipts require a summary and real response ID",
+          "expression": "this.state != 5 || (size(this.summary) > 0 && size(this.response_id) > 0)"
+        }
+      ]
+    }
+  },
+  "AcceptedSave": {
+    "fields": [
+      {
+        "name": "operation_id",
+        "jsonName": "operationId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "document",
+        "jsonName": "document",
+        "kind": "message",
+        "message": "DocumentSnapshot",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "commit_witness_id",
+        "jsonName": "commitWitnessId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "RejectedSave": {
+    "fields": [
+      {
+        "name": "operation_id",
+        "jsonName": "operationId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "code",
+        "jsonName": "code",
+        "kind": "enum",
+        "values": {
+          "REJECTION_CODE_UNSPECIFIED": 0,
+          "REJECTION_CODE_INVALID": 1,
+          "REJECTION_CODE_CONFLICT": 2,
+          "REJECTION_CODE_PROTECTED": 3,
+          "REJECTION_CODE_WRONG_OWNER": 4,
+          "REJECTION_CODE_OPERATION_ID_REUSED": 5
+        },
+        "optional": false,
+        "rules": {
+          "enum": {
+            "definedOnly": true,
+            "notIn": [
+              0
+            ]
+          }
+        }
+      },
+      {
+        "name": "reason",
+        "jsonName": "reason",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1"
+          }
+        }
+      },
+      {
+        "name": "current",
+        "jsonName": "current",
+        "kind": "message",
+        "message": "DocumentSnapshot",
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "UncertainSave": {
+    "fields": [
+      {
+        "name": "operation_id",
+        "jsonName": "operationId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "reason",
+        "jsonName": "reason",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SaveResult": {
+    "fields": [
+      {
+        "name": "accepted",
+        "jsonName": "accepted",
+        "kind": "message",
+        "message": "AcceptedSave",
+        "optional": false,
+        "oneof": "result",
+        "rules": {}
+      },
+      {
+        "name": "rejected",
+        "jsonName": "rejected",
+        "kind": "message",
+        "message": "RejectedSave",
+        "optional": false,
+        "oneof": "result",
+        "rules": {}
+      },
+      {
+        "name": "uncertain",
+        "jsonName": "uncertain",
+        "kind": "message",
+        "message": "UncertainSave",
+        "optional": false,
+        "oneof": "result",
+        "rules": {}
+      }
+    ],
+    "oneofs": [
+      {
+        "name": "result",
+        "rules": {
+          "required": true
+        }
+      }
+    ],
+    "rules": {}
+  },
+  "EditorRegistration": {
+    "fields": [
+      {
+        "name": "editor_instance_id",
+        "jsonName": "editorInstanceId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "process_id",
+        "jsonName": "processId",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {
+          "uint32": {
+            "gt": 0
+          }
+        }
+      },
+      {
+        "name": "rpc_address",
+        "jsonName": "rpcAddress",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "4096"
+          }
+        }
+      },
+      {
+        "name": "launch_id",
+        "jsonName": "launchId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "RegisterRequest": {
+    "fields": [
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "version",
+        "jsonName": "version",
+        "kind": "message",
+        "message": "ProtocolVersion",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "editor",
+        "jsonName": "editor",
+        "kind": "message",
+        "message": "EditorRegistration",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "RegisterResponse": {
+    "fields": [
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "selected_version",
+        "jsonName": "selectedVersion",
+        "kind": "message",
+        "message": "ProtocolVersion",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "max_request_bytes",
+        "jsonName": "maxRequestBytes",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {
+          "uint32": {
+            "const": 33554432
+          }
+        }
+      },
+      {
+        "name": "max_chunk_bytes",
+        "jsonName": "maxChunkBytes",
+        "kind": "scalar",
+        "scalar": 13,
+        "optional": false,
+        "rules": {
+          "uint32": {
+            "const": 32768
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "ValueChunk": {
+    "fields": [
+      {
+        "name": "transfer_id",
+        "jsonName": "transferId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "kind",
+        "jsonName": "kind",
+        "kind": "enum",
+        "values": {
+          "VALUE_KIND_UNSPECIFIED": 0,
+          "VALUE_KIND_DOCUMENT": 1,
+          "VALUE_KIND_FEEDBACK": 2,
+          "VALUE_KIND_SAVE_RESULT": 3
+        },
+        "optional": false,
+        "rules": {
+          "enum": {
+            "definedOnly": true,
+            "notIn": [
+              0
+            ]
+          }
+        }
+      },
+      {
+        "name": "total_bytes",
+        "jsonName": "totalBytes",
+        "kind": "scalar",
+        "scalar": 4,
+        "optional": false,
+        "rules": {
+          "uint64": {
+            "gt": "0"
+          }
+        }
+      },
+      {
+        "name": "sha256",
+        "jsonName": "sha256",
+        "kind": "scalar",
+        "scalar": 12,
+        "optional": false,
+        "rules": {
+          "bytes": {
+            "len": "32"
+          }
+        }
+      },
+      {
+        "name": "offset",
+        "jsonName": "offset",
+        "kind": "scalar",
+        "scalar": 4,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "data",
+        "jsonName": "data",
+        "kind": "scalar",
+        "scalar": 12,
+        "optional": false,
+        "rules": {
+          "bytes": {
+            "minLen": "1",
+            "maxLen": "32768"
+          }
+        }
+      },
+      {
+        "name": "value_complete",
+        "jsonName": "valueComplete",
+        "kind": "scalar",
+        "scalar": 8,
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {
+      "cel": [
+        {
+          "id": "chunk.bounds",
+          "message": "chunk must stay within its declared value; completion must match its final byte",
+          "expression": "this.offset + uint(size(this.data)) <= this.total_bytes && this.value_complete == (this.offset + uint(size(this.data)) == this.total_bytes)"
+        }
+      ]
+    }
+  },
+  "SyncHeader": {
+    "fields": [
+      {
+        "name": "session",
+        "jsonName": "session",
+        "kind": "message",
+        "message": "SessionRef",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "active_owner_id",
+        "jsonName": "activeOwnerId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": true,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SyncComplete": {
+    "fields": [
+      {
+        "name": "document_count",
+        "jsonName": "documentCount",
+        "kind": "scalar",
+        "scalar": 4,
+        "optional": false,
+        "rules": {}
+      },
+      {
+        "name": "feedback_count",
+        "jsonName": "feedbackCount",
+        "kind": "scalar",
+        "scalar": 4,
+        "optional": false,
+        "rules": {}
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SyncRequest": {
+    "fields": [
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "cursor",
+        "jsonName": "cursor",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SyncResponse": {
+    "fields": [
+      {
+        "name": "snapshot_id",
+        "jsonName": "snapshotId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "sequence",
+        "jsonName": "sequence",
+        "kind": "scalar",
+        "scalar": 4,
+        "optional": false,
+        "rules": {
+          "uint64": {
+            "gt": "0"
+          }
+        }
+      },
+      {
+        "name": "next_cursor",
+        "jsonName": "nextCursor",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "header",
+        "jsonName": "header",
+        "kind": "message",
+        "message": "SyncHeader",
+        "optional": false,
+        "oneof": "part",
+        "rules": {}
+      },
+      {
+        "name": "item",
+        "jsonName": "item",
+        "kind": "message",
+        "message": "ValueChunk",
+        "optional": false,
+        "oneof": "part",
+        "rules": {}
+      },
+      {
+        "name": "complete",
+        "jsonName": "complete",
+        "kind": "message",
+        "message": "SyncComplete",
+        "optional": false,
+        "oneof": "part",
+        "rules": {}
+      }
+    ],
+    "oneofs": [
+      {
+        "name": "part",
+        "rules": {
+          "required": true
+        }
+      }
+    ],
+    "rules": {
+      "cel": [
+        {
+          "id": "sync.item_kind",
+          "message": "sync contains only document and feedback values",
+          "expression": "!has(this.item) || this.item.kind in [1, 2]"
+        },
+        {
+          "id": "sync.complete_cursor",
+          "message": "only a complete snapshot has an empty next_cursor",
+          "expression": "has(this.complete) == (size(this.next_cursor) == 0)"
+        }
+      ]
+    }
+  },
+  "SaveRequest": {
+    "fields": [
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "command",
+        "jsonName": "command",
+        "kind": "message",
+        "message": "SaveCommand",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "SaveResponse": {
+    "fields": [
+      {
+        "name": "value",
+        "jsonName": "value",
+        "kind": "message",
+        "message": "ValueChunk",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "next_cursor",
+        "jsonName": "nextCursor",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {
+      "cel": [
+        {
+          "id": "save.result_page",
+          "message": "save returns only a SaveResult; the final chunk has no continuation",
+          "expression": "this.value.kind == 3 && this.value.value_complete == (size(this.next_cursor) == 0)"
+        }
+      ]
+    }
+  },
+  "FeedbackRequest": {
+    "fields": [
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "command",
+        "jsonName": "command",
+        "kind": "message",
+        "message": "FeedbackCommand",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "FeedbackResponse": {
+    "fields": [
+      {
+        "name": "value",
+        "jsonName": "value",
+        "kind": "message",
+        "message": "ValueChunk",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "next_cursor",
+        "jsonName": "nextCursor",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {
+      "cel": [
+        {
+          "id": "feedback.result_page",
+          "message": "feedback returns only a FeedbackRecord; the final chunk has no continuation",
+          "expression": "this.value.kind == 2 && this.value.value_complete == (size(this.next_cursor) == 0)"
+        }
+      ]
+    }
+  },
+  "ResultRequest": {
+    "fields": [
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "cursor",
+        "jsonName": "cursor",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  },
+  "ResultResponse": {
+    "fields": [
+      {
+        "name": "value",
+        "jsonName": "value",
+        "kind": "message",
+        "message": "ValueChunk",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "next_cursor",
+        "jsonName": "nextCursor",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "maxLen": "200"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {
+      "cel": [
+        {
+          "id": "result.kind",
+          "message": "result continues only save and feedback replies",
+          "expression": "this.value.kind in [2, 3]"
+        },
+        {
+          "id": "result.complete_cursor",
+          "message": "the final value chunk has no continuation",
+          "expression": "this.value.value_complete == (size(this.next_cursor) == 0)"
+        }
+      ]
+    }
+  },
+  "ConnectionManifest": {
+    "fields": [
+      {
+        "name": "version",
+        "jsonName": "version",
+        "kind": "message",
+        "message": "ProtocolVersion",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "socket_path",
+        "jsonName": "socketPath",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "4096"
+          }
+        }
+      },
+      {
+        "name": "bearer_token",
+        "jsonName": "bearerToken",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      },
+      {
+        "name": "context",
+        "jsonName": "context",
+        "kind": "message",
+        "message": "CallContext",
+        "optional": false,
+        "rules": {
+          "required": true
+        }
+      },
+      {
+        "name": "launch_id",
+        "jsonName": "launchId",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "200"
+          }
+        }
+      },
+      {
+        "name": "projection_directory",
+        "jsonName": "projectionDirectory",
+        "kind": "scalar",
+        "scalar": 9,
+        "optional": false,
+        "rules": {
+          "string": {
+            "minLen": "1",
+            "maxLen": "4096"
+          }
+        }
+      }
+    ],
+    "oneofs": [],
+    "rules": {}
+  }
+}

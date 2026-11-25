@@ -3,3 +3,4 @@ node_modules/
 dist/
 .aot/
 __pycache__/
+artifacts/
