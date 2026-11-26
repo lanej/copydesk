@@ -1,11 +1,11 @@
-local root = assert(vim.env.EDITOR_INTEROP_RUNTIME)
+local root = assert(vim.env.COPYDESK_RUNTIME)
 vim.opt.runtimepath:append(root)
-local wire = require("editor_interop_wire")
+local wire = require("copydesk_wire")
 local uv = vim.uv
 local function read(path)
 	return table.concat(vim.fn.readfile(path), "\n")
 end
-local fixtures = assert(vim.env.EDITOR_INTEROP_FIXTURES)
+local fixtures = assert(vim.env.COPYDESK_FIXTURES)
 local checked = 0
 local function check(value, message)
 	assert(value, message)
@@ -81,7 +81,7 @@ local view = fixture("sync").expectedDocuments[1]
 view.projectionPath = manifest.projectionDirectory .. "/document.md"
 -- Exercise the real Unix HTTP parser with fragmented headers, both framing
 -- forms, and malformed replies. The fake server owns only this test socket.
-local http = require("editor_interop_http")
+local http = require("copydesk_http")
 local socket_path = directory .. "/http.sock"
 local server = uv.new_pipe(false)
 assert(server:bind(socket_path))
@@ -188,7 +188,7 @@ check(request_checks == 7, "All HTTP tests sent real authenticated unary request
 server:close()
 uv.fs_unlink(socket_path)
 local pages, at = {}, 0
-package.loaded.editor_interop_http = {
+package.loaded.copydesk_http = {
 	call = function(_, method, _, callback)
 		check(method == "Sync", "Only read requests in staging fixture")
 		at = at + 1
@@ -208,7 +208,7 @@ package.loaded.editor_interop_http = {
 		return function() end
 	end,
 }
-local client = require("editor_interop_client").new(manifest)
+local client = require("copydesk_client").new(manifest)
 client.registered = true
 local function digest(raw)
 	return vim.base64.encode((vim.fn.sha256(raw):gsub("..", function(pair)

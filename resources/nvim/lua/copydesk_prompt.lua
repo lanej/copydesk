@@ -92,7 +92,7 @@ function M.open(buffer, first, last, submit)
 		prompt = api.nvim_open_win(input, true, placement(source, buffer, first, last))
 		vim.wo[prompt].wrap, vim.wo[prompt].sidescrolloff = false, 0
 		api.nvim_set_hl(0, "EditorCommentBorder", { default = true, fg = "#b48ead", ctermfg = 5 })
-		vim.wo[prompt].winhighlight = "FloatBorder:EditorCommentBorder,FloatFooter:EditorCommentBorder"
+		vim.wo[prompt].winhighlight = "FloatBorder:CopydeskCommentBorder,FloatFooter:CopydeskCommentBorder"
 		mark = api.nvim_buf_set_extmark(buffer, highlight, first - 1, 0, {
 			end_row = last,
 			end_col = 0,
@@ -111,7 +111,7 @@ function M.open(buffer, first, last, submit)
 	end)
 	if not opened then
 		finish()
-		vim.notify("Editor: Cannot open the comment input: " .. tostring(failure), vim.log.levels.WARN)
+		vim.notify("Copydesk: Cannot open the comment input: " .. tostring(failure), vim.log.levels.WARN)
 	end
 end
 

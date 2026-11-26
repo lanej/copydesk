@@ -1,4 +1,4 @@
-# Editor interoperability protocol v1
+# Copydesk protocol v1
 
 The [Protobuf service](../proto/editorinterop/v1/editor_interop.proto) defines the wire contract. The [host interfaces](../src/host.ts) define the in-process provider, launcher and workspace. [Authority and recovery](architecture.md) describes guarantees that message validation alone cannot establish.
 

@@ -1,6 +1,6 @@
 local M = {}
 local uv = vim.uv or vim.loop
-local wire = require("editor_interop_wire")
+local wire = require("copydesk_wire")
 local body_limit, header_limit = 65536, 16384
 
 -- One connection per unary call. Identity belongs to the bearer registration,

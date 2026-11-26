@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@lanej/editor-interop",
+      "name": "@lanej/copydesk",
       "dependencies": {
         "@bufbuild/protobuf": "2.17.0",
         "@bufbuild/protovalidate": "1.3.0",

@@ -4,7 +4,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 
-const temporary = mkdtempSync(join(tmpdir(), 'editor-interop-generated-'));
+const temporary = mkdtempSync(join(tmpdir(), 'copydesk-generated-'));
 function files(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => entry.isDirectory() ? files(join(directory, entry.name)) : [join(directory, entry.name)]);
 }

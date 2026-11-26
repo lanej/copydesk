@@ -1,7 +1,7 @@
 local M = {}
 local uv = vim.uv
-local wire = require("editor_interop_wire")
-local http = require("editor_interop_http")
+local wire = require("copydesk_wire")
+local http = require("copydesk_http")
 local editor_instance_id = tostring(vim.fn.getpid()) .. "-" .. tostring(uv.hrtime())
 local function read(path)
 	local file = assert(io.open(path, "rb"))

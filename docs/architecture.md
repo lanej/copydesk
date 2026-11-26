@@ -4,7 +4,7 @@
 
 The independent system supplies the document protocol, its host-facing provider interface, local transport and projection machinery, and the Neovim client. Studio implements the provider and supplies its existing pane launcher. Studio remains authoritative for specification/plan content, schema validation, storage, workflow state, and conversation delivery. The new repository can build and run its complete document-and-feedback loop against a fake host without importing or installing Studio.
 
-A separate repository does not require a separate daemon. For this milestone Studio loads a pinned interoperability package and starts its local endpoint inside the existing process. Neovim connects directly to that endpoint. Projection files remain backed by the host's existing state.
+A separate repository does not require a separate daemon. For this milestone Studio loads a pinned Copydesk package and starts its local endpoint inside the existing process. Neovim connects directly to that endpoint. Projection files remain backed by the host's existing state.
 
 ```mermaid
 flowchart TD
