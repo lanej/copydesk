@@ -293,7 +293,7 @@ try {
       promptRow <= selectionEnd + 2,
     composer,
   );
-  assert(composer.includes("Editor comment: lines 3–4"), composer);
+  assert(!composer.includes("Editor comment:"), composer);
   assert(composer.includes("Esc cancel"), composer);
   await lua('vim.api.nvim_input("<CR>"); return true');
   await wait(

@@ -38,12 +38,6 @@ local function placement(source, buffer, first, last)
 		width = width,
 		height = 1,
 		border = "rounded",
-		title = width >= 30
-				and (first == last and (" Editor comment: line %d "):format(first) or (" Editor comment: lines %d–%d "):format(
-					first,
-					last
-				))
-			or " Comment ",
 		footer = width >= 26 and " Enter send  ·  Esc cancel " or nil,
 		footer_pos = "right",
 		noautocmd = true,
@@ -97,7 +91,8 @@ function M.open(buffer, first, last, submit)
 		vim.cmd.redraw()
 		prompt = api.nvim_open_win(input, true, placement(source, buffer, first, last))
 		vim.wo[prompt].wrap, vim.wo[prompt].sidescrolloff = false, 0
-		vim.wo[prompt].winhighlight = "FloatBorder:DiagnosticInfo,FloatTitle:Title,FloatFooter:DiagnosticInfo"
+		api.nvim_set_hl(0, "EditorCommentBorder", { default = true, fg = "#b48ead", ctermfg = 5 })
+		vim.wo[prompt].winhighlight = "FloatBorder:EditorCommentBorder,FloatFooter:EditorCommentBorder"
 		mark = api.nvim_buf_set_extmark(buffer, highlight, first - 1, 0, {
 			end_row = last,
 			end_col = 0,
