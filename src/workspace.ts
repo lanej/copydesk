@@ -1,27 +1,9 @@
-import {
-  createHash,
-  randomBytes,
-  randomUUID,
-  timingSafeEqual,
-} from "node:crypto";
-import {
-  chmod,
-  lstat,
-  mkdir,
-  realpath,
-  rename,
-  rm,
-  writeFile,
-} from "node:fs/promises";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { chmod, lstat, mkdir, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { isAbsolute, join } from "node:path";
 import { clone, create, equals, toJsonString } from "@bufbuild/protobuf";
-import {
-  Code,
-  ConnectError,
-  type HandlerContext,
-  type Interceptor,
-} from "@connectrpc/connect";
+import { Code, ConnectError, type HandlerContext, type Interceptor } from "@connectrpc/connect";
 import { connectNodeAdapter } from "@connectrpc/connect-node";
 import { createValidateInterceptor } from "@connectrpc/validate";
 import {
@@ -66,13 +48,8 @@ import { OperationTransfers, SnapshotTransfer } from "./transfers.js";
  * Neovim runtime directory. The host retains storage, admission and approval authority.
  * Dispose before replacing an activation; disposal never kills the user's editor.
  */
-export async function createWorkspace(
-  options: WorkspaceOptions,
-): Promise<EditorWorkspace> {
-  const activation = clone(
-    CallContextSchema,
-    checked(CallContextSchema, options.context),
-  );
+export async function createWorkspace(options: WorkspaceOptions): Promise<EditorWorkspace> {
+  const activation = clone(CallContextSchema, checked(CallContextSchema, options.context));
   if (!isAbsolute(options.directory) || !isAbsolute(options.runtimePath))
     throw new Error("Workspace and runtime paths must be absolute");
   await mkdir(options.directory, { recursive: true, mode: 0o700 });
@@ -81,40 +58,25 @@ export async function createWorkspace(
     !stat.isDirectory() ||
     stat.isSymbolicLink() ||
     (stat.mode & 0o077) !== 0 ||
-    (process.getuid !== undefined && stat.uid !== process.getuid())
+    (process.getuid && stat.uid !== process.getuid())
   )
-    throw new Error(
-      "Workspace directory must be privately owned with mode 0700",
-    );
+    throw new Error("Workspace directory must be privately owned with mode 0700");
   const directory = await realpath(options.directory);
   const projectionDirectory = join(directory, "documents");
   const spoolDirectory = join(directory, `transfers-${randomUUID()}`);
   await mkdir(projectionDirectory, { recursive: true, mode: 0o700 });
   const projectionStat = await lstat(projectionDirectory);
-  if (
-    projectionStat.isSymbolicLink() ||
-    !projectionStat.isDirectory() ||
-    (projectionStat.mode & 0o077) !== 0
-  )
-    throw new Error(
-      "Projection directory must remain private and cannot be a symlink",
-    );
+  if (projectionStat.isSymbolicLink() || !projectionStat.isDirectory() || (projectionStat.mode & 0o077) !== 0)
+    throw new Error("Projection directory must remain private and cannot be a symlink");
   await mkdir(spoolDirectory, { mode: 0o700 });
   const socketPath = join(directory, `ipc-${randomBytes(8).toString("hex")}`);
   if (Buffer.byteLength(socketPath) > 100)
-    throw new Error(
-      "Workspace directory is too long for a portable Unix socket",
-    );
+    throw new Error("Workspace directory is too long for a portable Unix socket");
   const manifestPath = join(directory, "connection.json");
   const queue = new SerialQueue();
   const registrations = new SerialQueue();
   const projections = new Projections(await realpath(projectionDirectory));
-  const snapshots = new SnapshotTransfer(
-    spoolDirectory,
-    options.provider,
-    activation,
-    projections,
-  );
+  const snapshots = new SnapshotTransfer(spoolDirectory, options.provider, activation, projections);
   const results = new OperationTransfers(spoolDirectory);
   let token = randomBytes(32).toString("hex");
   let launchId = randomUUID();
@@ -148,22 +110,14 @@ export async function createWorkspace(
   function validToken(header: string | null): boolean {
     const actual = Buffer.from(header ?? "");
     const expected = Buffer.from(`Bearer ${token}`);
-    return (
-      actual.length === expected.length && timingSafeEqual(actual, expected)
-    );
+    return actual.length === expected.length && timingSafeEqual(actual, expected);
   }
-  function guard(
-    context: CallContext | undefined,
-    handler: HandlerContext,
-  ): void {
+  function guard(context: CallContext | undefined, handler: HandlerContext): void {
     if (disposed || !validToken(handler.requestHeader.get("authorization")))
       throw new ConnectError("Invalid editor credential", Code.Unauthenticated);
     assertContext(context, activation);
-    if (registration === undefined)
-      throw new ConnectError(
-        "Register the editor before using this workspace",
-        Code.FailedPrecondition,
-      );
+    if (!registration)
+      throw new ConnectError("Register the editor before using this workspace", Code.FailedPrecondition);
   }
   function assertRunning(): void {
     if (isDisposed()) throw new Error("Workspace is disposed");
@@ -179,11 +133,7 @@ export async function createWorkspace(
       projectionDirectory,
     });
     const temporary = `${manifestPath}.${randomUUID()}.tmp`;
-    await writeFile(
-      temporary,
-      toJsonString(ConnectionManifestSchema, manifest),
-      { mode: 0o600, flag: "wx" },
-    );
+    await writeFile(temporary, toJsonString(ConnectionManifestSchema, manifest), { mode: 0o600, flag: "wx" });
     if (isDisposed()) {
       await rm(temporary, { force: true });
       assertRunning();
@@ -230,30 +180,21 @@ export async function createWorkspace(
     } catch (error) {
       attachment = {
         state: "uncertain",
-        reason:
-          error instanceof Error
-            ? error.message
-            : "Launcher outcome is unknown",
+        reason: error instanceof Error ? error.message : "Launcher outcome is unknown",
       };
     }
     assertRunning();
     return attachment;
   }
   async function refreshNow(): Promise<void> {
-    const reader = await options.provider.openSnapshot(
-      clone(CallContextSchema, activation),
-    );
+    const reader = await options.provider.openSnapshot(clone(CallContextSchema, activation));
     let hasDocument = false;
     const seen = new Set<string>();
     try {
       checked(SyncHeaderSchema, reader.header);
       if (!sameSession(reader.header.session, activation.session))
         throw new ConnectError("Foreign projection session", Code.Internal);
-      for (
-        let item = await reader.next();
-        item !== undefined;
-        item = await reader.next()
-      ) {
+      for (let item = await reader.next(); item; item = await reader.next()) {
         if (item.kind !== "document") continue;
         checked(DocumentSnapshotSchema, item.value);
         const ref = required(item.value.ref, "document ref");
@@ -262,10 +203,7 @@ export async function createWorkspace(
           ref.ownerId !== reader.header.activeOwnerId ||
           seen.has(documentKey(ref))
         )
-          throw new ConnectError(
-            "Invalid projection document membership",
-            Code.Internal,
-          );
+          throw new ConnectError("Invalid projection document membership", Code.Internal);
         seen.add(documentKey(ref));
         hasDocument = true;
         await projections.update(item.value);
@@ -277,7 +215,7 @@ export async function createWorkspace(
   }
   function refresh(): Promise<void> {
     if (disposed) return Promise.reject(new Error("Workspace is disposed"));
-    if (refreshPromise !== undefined) {
+    if (refreshPromise) {
       refreshAgain = true;
       return refreshPromise;
     }
@@ -299,13 +237,9 @@ export async function createWorkspace(
       throw new ConnectError("Invalid editor credential", Code.Unauthenticated);
     if (
       request.header.get("connect-protocol-version") !== "1" ||
-      request.header.get("content-type")?.split(";")[0]?.trim() !==
-        "application/json"
+      request.header.get("content-type")?.split(";")[0]?.trim() !== "application/json"
     ) {
-      throw new ConnectError(
-        "Application v1 requires Connect JSON protocol version 1",
-        Code.InvalidArgument,
-      );
+      throw new ConnectError("Application v1 requires Connect JSON protocol version 1", Code.InvalidArgument);
     }
     try {
       return await next(request);
@@ -333,53 +267,25 @@ export async function createWorkspace(
       router.service(EditorInteropService, {
         register(request, context) {
           return registrations.run(async () => {
-            if (
-              disposed ||
-              !validToken(context.requestHeader.get("authorization"))
-            )
-              throw new ConnectError(
-                "Invalid editor credential",
-                Code.Unauthenticated,
-              );
+            if (disposed || !validToken(context.requestHeader.get("authorization")))
+              throw new ConnectError("Invalid editor credential", Code.Unauthenticated);
             assertContext(request.context, activation);
             if (request.version?.major !== 1)
-              throw new ConnectError(
-                "No compatible Copydesk protocol version",
-                Code.FailedPrecondition,
-              );
+              throw new ConnectError("No compatible Copydesk protocol version", Code.FailedPrecondition);
             const editor = required(request.editor, "editor registration");
             if (
               editor.launchId !== launchId ||
-              (registration !== undefined &&
-                !equals(EditorRegistrationSchema, registration, editor))
+              (registration && !equals(EditorRegistrationSchema, registration, editor))
             )
-              throw new ConnectError(
-                "Registration does not match the issued launch",
-                Code.FailedPrecondition,
-              );
+              throw new ConnectError("Registration does not match the issued launch", Code.FailedPrecondition);
             const capturedToken = token;
-            const verified = await options.launcher.verifyRegistration(
-              launchRequest,
-              editor,
-            );
+            const verified = await options.launcher.verifyRegistration(launchRequest, editor);
             if (isDisposed() || token !== capturedToken)
-              throw new ConnectError(
-                "Activation changed during registration",
-                Code.FailedPrecondition,
-              );
+              throw new ConnectError("Activation changed during registration", Code.FailedPrecondition);
             if (verified.processIdentity === "" || verified.attachmentId === "")
-              throw new ConnectError(
-                "Launcher did not verify process identity",
-                Code.FailedPrecondition,
-              );
-            if (
-              attachment.state === "open" &&
-              attachment.attachmentId !== verified.attachmentId
-            )
-              throw new ConnectError(
-                "Registration belongs to another attachment",
-                Code.FailedPrecondition,
-              );
+              throw new ConnectError("Launcher did not verify process identity", Code.FailedPrecondition);
+            if (attachment.state === "open" && attachment.attachmentId !== verified.attachmentId)
+              throw new ConnectError("Registration belongs to another attachment", Code.FailedPrecondition);
             registration = editor;
             attachment = { state: "open", attachmentId: verified.attachmentId };
             return {
@@ -394,10 +300,7 @@ export async function createWorkspace(
           return queue.run(async () => {
             guard(request.context, context);
             if (backgroundFailure !== undefined)
-              throw new ConnectError(
-                "Projection refresh failed; refresh the workspace explicitly",
-                Code.Unavailable,
-              );
+              throw new ConnectError("Projection refresh failed; refresh the workspace explicitly", Code.Unavailable);
             return snapshots.call(request.cursor);
           });
         },
@@ -406,56 +309,29 @@ export async function createWorkspace(
             guard(request.context, context);
             const command = required(request.command, "save command");
             if (!sameSession(command.ref?.session, activation.session))
-              throw new ConnectError(
-                "Foreign document session",
-                Code.FailedPrecondition,
-              );
+              throw new ConnectError("Foreign document session", Code.FailedPrecondition);
             const key = `save:${createHash("sha256").update(toJsonString(SaveCommandSchema, command)).digest("hex")}`;
-            const response = await results.start(
-              key,
-              ValueKind.SAVE_RESULT,
-              SaveResultSchema,
-              async () => {
-                const result = checked(
-                  SaveResultSchema,
-                  await options.provider.save(
-                    clone(CallContextSchema, activation),
-                    clone(SaveCommandSchema, command),
-                  ),
-                );
-                const value = result.result.value;
-                if (
-                  value === undefined ||
-                  value.operationId !== command.operationId
-                )
-                  throw new ConnectError(
-                    "Save receipt identity mismatch",
-                    Code.Internal,
-                  );
-                if (result.result.case === "accepted") {
-                  const document = required(
-                    result.result.value.document,
-                    "accepted document",
-                  );
-                  if (
-                    document.ref === undefined ||
-                    command.ref === undefined ||
-                    !equals(DocumentRefSchema, document.ref, command.ref)
-                  )
-                    throw new ConnectError(
-                      "Save receipt document mismatch",
-                      Code.Internal,
-                    );
-                  // Refresh current authority; a recovered older witness cannot roll back projections.
-                  try {
-                    await refreshNow();
-                  } catch (error) {
-                    backgroundFailure = error;
-                  }
+            const response = await results.start(key, ValueKind.SAVE_RESULT, SaveResultSchema, async () => {
+              const result = checked(
+                SaveResultSchema,
+                await options.provider.save(clone(CallContextSchema, activation), clone(SaveCommandSchema, command)),
+              );
+              const value = result.result.value;
+              if (!value || value.operationId !== command.operationId)
+                throw new ConnectError("Save receipt identity mismatch", Code.Internal);
+              if (result.result.case === "accepted") {
+                const document = required(result.result.value.document, "accepted document");
+                if (!document.ref || !command.ref || !equals(DocumentRefSchema, document.ref, command.ref))
+                  throw new ConnectError("Save receipt document mismatch", Code.Internal);
+                // Refresh current authority; a recovered older witness cannot roll back projections.
+                try {
+                  await refreshNow();
+                } catch (error) {
+                  backgroundFailure = error;
                 }
-                return result;
-              },
-            );
+              }
+              return result;
+            });
             return { value: response.value, nextCursor: response.nextCursor };
           });
         },
@@ -464,10 +340,7 @@ export async function createWorkspace(
             guard(request.context, context);
             const command = required(request.command, "feedback command");
             if (!sameSession(command.ref?.session, activation.session))
-              throw new ConnectError(
-                "Foreign document session",
-                Code.FailedPrecondition,
-              );
+              throw new ConnectError("Foreign document session", Code.FailedPrecondition);
             const response = await results.start(
               `feedback:${createHash("sha256").update(toJsonString(FeedbackCommandSchema, command)).digest("hex")}`,
               ValueKind.FEEDBACK,
@@ -480,14 +353,8 @@ export async function createWorkspace(
                     clone(FeedbackCommandSchema, command),
                   ),
                 );
-                if (
-                  record.request === undefined ||
-                  !equals(FeedbackCommandSchema, record.request, command)
-                )
-                  throw new ConnectError(
-                    "Feedback receipt identity mismatch",
-                    Code.Internal,
-                  );
+                if (!record.request || !equals(FeedbackCommandSchema, record.request, command))
+                  throw new ConnectError("Feedback receipt identity mismatch", Code.Internal);
                 return record;
               },
             );
@@ -514,7 +381,7 @@ export async function createWorkspace(
     server.closeAllConnections();
     await new Promise<void>((resolve, reject) =>
       server.close((error) => {
-        if (error !== undefined) reject(error);
+        if (error) reject(error);
         else resolve();
       }),
     );

@@ -14,12 +14,7 @@ import {
 import { FakeHostProvider, FakeLauncher } from "../src/testing.js";
 
 await test("a killed host leaves a stale socket and a fresh activation reuses its projection directory without unlinking that endpoint", async () => {
-  const directory = await mkdtemp(
-    join(
-      process.platform === "darwin" ? "/private/tmp" : tmpdir(),
-      "ei-crash-",
-    ),
-  );
+  const directory = await mkdtemp(join(process.platform === "darwin" ? "/private/tmp" : tmpdir(), "ei-crash-"));
   const child = spawn(
     process.execPath,
     [
@@ -60,11 +55,7 @@ await test("a killed host leaves a stale socket and a fresh activation reuses it
   });
   child.once("exit", (code, signal) => {
     exited.resolve(undefined);
-    ready.reject(
-      new Error(
-        `Crash fixture exited before readiness (${String(code)}/${String(signal)}): ${errors}`,
-      ),
-    );
+    ready.reject(new Error(`Crash fixture exited before readiness (${String(code)}/${String(signal)}): ${errors}`));
   });
   const timeout = setTimeout(
     () => {
@@ -110,23 +101,14 @@ await test("a killed host leaves a stale socket and a fresh activation reuses it
       workingDirectory: process.cwd(),
       title: "Recovered",
     });
-    const current = fromJsonString(
-      ConnectionManifestSchema,
-      await readFile(workspace.manifestPath, "utf8"),
-    );
+    const current = fromJsonString(ConnectionManifestSchema, await readFile(workspace.manifestPath, "utf8"));
     assert.notEqual(current.socketPath, previous.socketPath);
     assert.equal(current.projectionDirectory, previous.projectionDirectory);
     assert.deepEqual(await readdir(current.projectionDirectory), originalFiles);
-    assert.ok(
-      (await lstat(previous.socketPath)).isSocket(),
-      "Recovery must not remove an endpoint it did not create",
-    );
+    assert.ok((await lstat(previous.socketPath)).isSocket(), "Recovery must not remove an endpoint it did not create");
     assert.ok((await lstat(current.socketPath)).isSocket());
     await workspace.dispose();
-    assert.ok(
-      (await lstat(previous.socketPath)).isSocket(),
-      "Disposal removes only this activation endpoint",
-    );
+    assert.ok((await lstat(previous.socketPath)).isSocket(), "Disposal removes only this activation endpoint");
   } finally {
     clearTimeout(timeout);
     if (child.exitCode === null && child.signalCode === null) {

@@ -54,10 +54,7 @@ const cases = {
     assert.equal(f.host.documents()[0]?.text, "Original");
     assert.equal(f.host.saveEffects, 0);
     f.host.beforeSave = undefined;
-    assert.equal(
-      (await f.host.save(f.context, f.command)).result.case,
-      "accepted",
-    );
+    assert.equal((await f.host.save(f.context, f.command)).result.case, "accepted");
     assert.equal(f.host.saveEffects, 1);
   },
   "save.lost_reply_after_commit": async () => {
@@ -91,22 +88,14 @@ const cases = {
         revision: "other-operation",
       }),
     );
-    assert.equal(
-      (await f.host.save(f.context, f.command)).result.case,
-      "rejected",
-    );
+    assert.equal((await f.host.save(f.context, f.command)).result.case, "rejected");
     assert.equal(f.host.saveEffects, 0);
   },
   "save.id_reused": async () => {
     const f = fixture();
     await f.host.save(f.context, f.command);
     assert.equal(
-      (
-        await f.host.save(
-          f.context,
-          create(SaveCommandSchema, { ...f.command, text: "Different" }),
-        )
-      ).result.case,
+      (await f.host.save(f.context, create(SaveCommandSchema, { ...f.command, text: "Different" }))).result.case,
       "rejected",
     );
     assert.equal(f.host.saveEffects, 1);
@@ -114,22 +103,14 @@ const cases = {
   "save.incomplete_evidence": async () => {
     const f = fixture();
     f.host.seedIncompleteSave(f.command);
-    f.host.seedDocument(
-      create(DocumentSnapshotSchema, { ...f.document, text: f.command.text }),
-    );
-    assert.equal(
-      (await f.host.save(f.context, f.command)).result.case,
-      "uncertain",
-    );
+    f.host.seedDocument(create(DocumentSnapshotSchema, { ...f.document, text: f.command.text }));
+    assert.equal((await f.host.save(f.context, f.command)).result.case, "uncertain");
     assert.equal(f.host.saveEffects, 0);
   },
   "save.stale_candidate": async () => {
     for (const first of ["editor", "agent"]) {
       const f = fixture();
-      await f.host.save(
-        f.context,
-        create(SaveCommandSchema, { ...f.command, operationId: first }),
-      );
+      await f.host.save(f.context, create(SaveCommandSchema, { ...f.command, operationId: first }));
       assert.equal(
         (
           await f.host.save(
@@ -151,10 +132,7 @@ const cases = {
       await Promise.resolve();
       f.host.setActiveOwner("other");
     };
-    assert.equal(
-      (await f.host.save(f.context, f.command)).result.case,
-      "rejected",
-    );
+    assert.equal((await f.host.save(f.context, f.command)).result.case, "rejected");
     assert.equal(f.host.saveEffects, 0);
   },
   "feedback.exact_unsaved_selection": async () => {
@@ -168,10 +146,7 @@ const cases = {
     await f.host.submitFeedback(f.context, f.feedback);
     assert.equal(f.host.feedbackEffects, 1);
     await assert.rejects(
-      f.host.submitFeedback(
-        f.context,
-        create(FeedbackCommandSchema, { ...f.feedback, message: "Different" }),
-      ),
+      f.host.submitFeedback(f.context, create(FeedbackCommandSchema, { ...f.feedback, message: "Different" })),
       /already belongs/,
     );
     assert.equal(f.host.feedbackEffects, 1);
@@ -211,15 +186,11 @@ const cases = {
         FeedbackState.UNCERTAIN,
       ],
     );
-    assert.ok(
-      f.host.feedback().every((receipt) => receipt.generation === "g1"),
-    );
+    assert.ok(f.host.feedback().every((receipt) => receipt.generation === "g1"));
     return Promise.resolve();
   },
 } satisfies Record<keyof typeof HOST_CONFORMANCE_CASES, () => Promise<void>>;
-const descriptions = new Map<string, string>(
-  Object.entries(HOST_CONFORMANCE_CASES),
-);
+const descriptions = new Map<string, string>(Object.entries(HOST_CONFORMANCE_CASES));
 for (const [id, run] of Object.entries(cases)) {
   const description = descriptions.get(id);
   assert.ok(description !== undefined);

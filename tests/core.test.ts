@@ -4,12 +4,7 @@ import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import {
-  create,
-  fromJsonString,
-  type DescMessage,
-  type MessageShape,
-} from "@bufbuild/protobuf";
+import { create, fromJsonString, type DescMessage, type MessageShape } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-node";
 import { createWorkspace } from "../src/index.js";
@@ -27,9 +22,7 @@ import {
 import { FakeHostProvider, FakeLauncher } from "../src/testing.js";
 
 async function fixture() {
-  const directory = await mkdtemp(
-    join(process.platform === "darwin" ? "/private/tmp" : tmpdir(), "ei-"),
-  );
+  const directory = await mkdtemp(join(process.platform === "darwin" ? "/private/tmp" : tmpdir(), "ei-"));
   const context = create(CallContextSchema, {
     session: {
       providerId: "fake",
@@ -57,10 +50,7 @@ async function fixture() {
     workingDirectory: process.cwd(),
     title: "Documents",
   });
-  const manifest = fromJsonString(
-    ConnectionManifestSchema,
-    await readFile(workspace.manifestPath, "utf8"),
-  );
+  const manifest = fromJsonString(ConnectionManifestSchema, await readFile(workspace.manifestPath, "utf8"));
   const client = createClient(
     EditorInteropService,
     createConnectTransport({
@@ -120,31 +110,13 @@ await test("real Connect Unix loop preserves projections, atomic save result and
   try {
     const header = await f.client.sync({ context: f.context }, f.options);
     assert.equal(header.part.case, "header");
-    const item = await f.client.sync(
-      { context: f.context, cursor: header.nextCursor },
-      f.options,
-    );
+    const item = await f.client.sync({ context: f.context, cursor: header.nextCursor }, f.options);
     assert.equal(item.part.case, "item");
-    const view = fromJsonString(
-      DocumentViewSchema,
-      Buffer.from(item.part.value.data).toString("utf8"),
-    );
-    assert.equal(
-      await readFile(view.projectionPath, "utf8"),
-      "# Draft\nOriginal\n",
-    );
+    const view = fromJsonString(DocumentViewSchema, Buffer.from(item.part.value.data).toString("utf8"));
+    assert.equal(await readFile(view.projectionPath, "utf8"), "# Draft\nOriginal\n");
     const finalCursor = item.nextCursor;
-    const complete = await f.client.sync(
-      { context: f.context, cursor: finalCursor },
-      f.options,
-    );
-    assert.deepEqual(
-      await f.client.sync(
-        { context: f.context, cursor: finalCursor },
-        f.options,
-      ),
-      complete,
-    );
+    const complete = await f.client.sync({ context: f.context, cursor: finalCursor }, f.options);
+    assert.deepEqual(await f.client.sync({ context: f.context, cursor: finalCursor }, f.options), complete);
     assert.equal(complete.part.case, "complete");
     const command = {
       operationId: "save-1",
@@ -152,10 +124,7 @@ await test("real Connect Unix loop preserves projections, atomic save result and
       expectedRevision: "revision-1",
       text: "# Draft\nEdited 🦉\n",
     };
-    const accepted = await f.result(
-      await f.client.save({ context: f.context, command }, f.options),
-      SaveResultSchema,
-    );
+    const accepted = await f.result(await f.client.save({ context: f.context, command }, f.options), SaveResultSchema);
     assert.equal(accepted.result.case, "accepted");
     assert.equal(await readFile(view.projectionPath, "utf8"), command.text);
     await f.client.save({ context: f.context, command }, f.options);
@@ -170,18 +139,12 @@ await test("real Connect Unix loop preserves projections, atomic save result and
       message: "Do we want this?",
     };
     const feedback = await f.result(
-      await f.client.feedback(
-        { context: f.context, command: feedbackCommand },
-        f.options,
-      ),
+      await f.client.feedback({ context: f.context, command: feedbackCommand }, f.options),
       FeedbackRecordSchema,
     );
     assert.equal(feedback.request?.selectedText, feedbackCommand.selectedText);
     assert.equal(feedback.state, FeedbackState.QUEUED);
-    await f.client.feedback(
-      { context: f.context, command: feedbackCommand },
-      f.options,
-    );
+    await f.client.feedback({ context: f.context, command: feedbackCommand }, f.options);
     assert.equal(f.host.feedbackEffects, 1);
     assert.equal(f.launcher.requests.length, 1);
     assert.equal(f.launcher.requests[0]?.takeFocus, false);
@@ -200,24 +163,15 @@ await test("wire rejects unregistered, forged, stale and schema-invalid requests
       text: "changed",
     };
     await assert.rejects(
-      f.client.save(
-        { context: f.context, command },
-        { headers: { authorization: "Bearer wrong" } },
-      ),
+      f.client.save({ context: f.context, command }, { headers: { authorization: "Bearer wrong" } }),
       /Invalid editor credential/,
     );
     await assert.rejects(
-      f.client.save(
-        { context: { ...f.context, generation: "old" }, command },
-        f.options,
-      ),
+      f.client.save({ context: { ...f.context, generation: "old" }, command }, f.options),
       /activation changed/,
     );
     await assert.rejects(
-      f.client.register(
-        { context: f.context, version: { major: 2 }, editor: f.editor },
-        f.options,
-      ),
+      f.client.register({ context: f.context, version: { major: 2 }, editor: f.editor }, f.options),
       /compatible/,
     );
     await assert.rejects(
@@ -231,41 +185,39 @@ await test("wire rejects unregistered, forged, stale and schema-invalid requests
       ),
       /issued launch/,
     );
-    const raw = await new Promise<{ status: number; body: string }>(
-      (resolve, reject) => {
-        const body = JSON.stringify({
-          context: f.context,
-          command: { ...command, unknownMeaning: true },
-        });
-        const req = request(
-          {
-            socketPath: f.manifest.socketPath,
-            path: "/editorinterop.v1.EditorInteropService/Save",
-            method: "POST",
-            agent: false,
-            headers: {
-              ...f.options.headers,
-              "content-type": "application/json",
-              "connect-protocol-version": "1",
-              "content-length": Buffer.byteLength(body),
-            },
+    const raw = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+      const body = JSON.stringify({
+        context: f.context,
+        command: { ...command, unknownMeaning: true },
+      });
+      const req = request(
+        {
+          socketPath: f.manifest.socketPath,
+          path: "/editorinterop.v1.EditorInteropService/Save",
+          method: "POST",
+          agent: false,
+          headers: {
+            ...f.options.headers,
+            "content-type": "application/json",
+            "connect-protocol-version": "1",
+            "content-length": Buffer.byteLength(body),
           },
-          (res) => {
-            let response = "";
-            res.setEncoding("utf8");
-            res.on("data", (part: string) => {
-              response += part;
-            });
-            res.once("error", reject);
-            res.once("end", () => {
-              resolve({ status: res.statusCode ?? 0, body: response });
-            });
-          },
-        );
-        req.once("error", reject);
-        req.end(body);
-      },
-    );
+        },
+        (res) => {
+          let response = "";
+          res.setEncoding("utf8");
+          res.on("data", (part: string) => {
+            response += part;
+          });
+          res.once("error", reject);
+          res.once("end", () => {
+            resolve({ status: res.statusCode ?? 0, body: response });
+          });
+        },
+      );
+      req.once("error", reject);
+      req.end(body);
+    });
     assert.equal(raw.status, 400);
     assert.match(raw.body, /unknown/);
     assert.equal(f.host.saveEffects, 0);
@@ -273,10 +225,7 @@ await test("wire rejects unregistered, forged, stale and schema-invalid requests
       f.host.setActiveOwner("owner-2");
       return Promise.resolve();
     };
-    const refused = await f.result(
-      await f.client.save({ context: f.context, command }, f.options),
-      SaveResultSchema,
-    );
+    const refused = await f.result(await f.client.save({ context: f.context, command }, f.options), SaveResultSchema);
     assert.equal(refused.result.case, "rejected");
     assert.equal(f.host.saveEffects, 0);
   } finally {
@@ -294,10 +243,7 @@ await test("lost committed reply resolves the original witness without rolling b
       text: "first committed",
     };
     f.host.afterCommit = () => Promise.reject(new Error("lost response"));
-    await assert.rejects(
-      f.client.save({ context: f.context, command }, f.options),
-      /internal/,
-    );
+    await assert.rejects(f.client.save({ context: f.context, command }, f.options), /internal/);
     const committed = f.host.documents()[0];
     assert.ok(committed !== undefined);
     f.host.seedDocument(
@@ -308,24 +254,15 @@ await test("lost committed reply resolves the original witness without rolling b
       }),
     );
     f.host.afterCommit = undefined;
-    const recovered = await f.result(
-      await f.client.save({ context: f.context, command }, f.options),
-      SaveResultSchema,
-    );
+    const recovered = await f.result(await f.client.save({ context: f.context, command }, f.options), SaveResultSchema);
     assert.equal(recovered.result.case, "accepted");
     assert.equal(recovered.result.value.document?.revision, committed.revision);
     assert.equal(f.host.documents()[0]?.text, "newer writer");
     assert.equal(f.host.saveEffects, 1);
     const header = await f.client.sync({ context: f.context }, f.options);
-    const item = await f.client.sync(
-      { context: f.context, cursor: header.nextCursor },
-      f.options,
-    );
+    const item = await f.client.sync({ context: f.context, cursor: header.nextCursor }, f.options);
     if (item.part.case !== "item") throw new Error("Expected document");
-    const view = fromJsonString(
-      DocumentViewSchema,
-      Buffer.from(item.part.value.data).toString("utf8"),
-    );
+    const view = fromJsonString(DocumentViewSchema, Buffer.from(item.part.value.data).toString("utf8"));
     assert.equal(await readFile(view.projectionPath, "utf8"), "newer writer");
   } finally {
     await f.close();
@@ -342,20 +279,11 @@ await test("manual close suppresses automatic reopening and explicit reopen rota
     const reopened = await f.workspace.open();
     assert.equal(reopened.state, "open");
     assert.equal(f.launcher.requests.length, 2);
-    const current = fromJsonString(
-      ConnectionManifestSchema,
-      await readFile(f.workspace.manifestPath, "utf8"),
-    );
+    const current = fromJsonString(ConnectionManifestSchema, await readFile(f.workspace.manifestPath, "utf8"));
     assert.notEqual(current.bearerToken, f.manifest.bearerToken);
+    await assert.rejects(f.client.sync({ context: f.context }, f.options), /Invalid editor credential/);
     await assert.rejects(
-      f.client.sync({ context: f.context }, f.options),
-      /Invalid editor credential/,
-    );
-    await assert.rejects(
-      f.client.sync(
-        { context: f.context },
-        { headers: { authorization: `Bearer ${current.bearerToken}` } },
-      ),
+      f.client.sync({ context: f.context }, { headers: { authorization: `Bearer ${current.bearerToken}` } }),
       /Register/,
     );
   } finally {
@@ -399,8 +327,7 @@ for (const stage of ["inspect", "uncertain reconciliation"]) {
   await test(`disposal during deferred ${stage} prevents subsequent manifest and launch effects`, async () => {
     const f = await fixture();
     const started = Promise.withResolvers<undefined>();
-    const release =
-      Promise.withResolvers<import("../src/host.js").AttachmentState>();
+    const release = Promise.withResolvers<import("../src/host.js").AttachmentState>();
     let reconciliations = 0;
     try {
       const before = await readFile(f.workspace.manifestPath, "utf8");
@@ -410,8 +337,7 @@ for (const stage of ["inspect", "uncertain reconciliation"]) {
           return release.promise;
         };
       } else {
-        f.launcher.inspect = () =>
-          Promise.resolve({ state: "uncertain", reason: "Probe pending" });
+        f.launcher.inspect = () => Promise.resolve({ state: "uncertain", reason: "Probe pending" });
         f.launcher.ensure = () => {
           reconciliations++;
           started.resolve(undefined);
@@ -426,16 +352,8 @@ for (const stage of ["inspect", "uncertain reconciliation"]) {
       await rejected;
       await disposal;
       assert.equal(await readFile(f.workspace.manifestPath, "utf8"), before);
-      assert.equal(
-        f.launcher.requests.length,
-        1,
-        "No additional pane launch after shutdown begins",
-      );
-      assert.equal(
-        reconciliations,
-        stage === "inspect" ? 0 : 1,
-        "Only an already-started reconciliation may finish",
-      );
+      assert.equal(f.launcher.requests.length, 1, "No additional pane launch after shutdown begins");
+      assert.equal(reconciliations, stage === "inspect" ? 0 : 1, "Only an already-started reconciliation may finish");
     } finally {
       release.resolve({ state: "closed" });
       await f.close();
@@ -457,87 +375,39 @@ await test("fresh explicit save retries reconstruct long active and completed re
     text: "A long Unicode reply 🦉\n".repeat(20_000),
   };
   try {
-    const first = await f.client.save(
-      { context: f.context, command },
-      f.options,
-    );
+    const first = await f.client.save({ context: f.context, command }, f.options);
     let partial: { value?: ValueChunk | undefined; nextCursor: string } = first;
     for (let page = 0; page < 3; page++) {
       assert.notEqual(partial.nextCursor, "");
-      partial = await f.client.result(
-        { context: f.context, cursor: partial.nextCursor },
-        f.options,
-      );
+      partial = await f.client.result({ context: f.context, cursor: partial.nextCursor }, f.options);
     }
     const originalOutstanding = partial.nextCursor;
     assert.notEqual(originalOutstanding, "");
     // Both replies are discarded, as when the editor times out and drops its stage.
-    const lost = await f.client.result(
-      { context: f.context, cursor: originalOutstanding },
-      f.options,
-    );
-    assert.notEqual(
-      lost.nextCursor,
-      "",
-      "The result must exceed four continuation pages",
-    );
-    assert.deepEqual(
-      await f.client.result(
-        { context: f.context, cursor: originalOutstanding },
-        f.options,
-      ),
-      lost,
-    );
-    const restarted = await f.client.save(
-      { context: f.context, command },
-      f.options,
-    );
+    const lost = await f.client.result({ context: f.context, cursor: originalOutstanding }, f.options);
+    assert.notEqual(lost.nextCursor, "", "The result must exceed four continuation pages");
+    assert.deepEqual(await f.client.result({ context: f.context, cursor: originalOutstanding }, f.options), lost);
+    const restarted = await f.client.save({ context: f.context, command }, f.options);
     assert.deepEqual(restarted, first);
     const forged = `${first.nextCursor.slice(0, -1)}${first.nextCursor.endsWith("0") ? "1" : "0"}`;
-    await assert.rejects(
-      f.client.result({ context: f.context, cursor: forged }, f.options),
-      /expired/,
-    );
-    assert.equal(
-      invocations,
-      1,
-      "The retained immutable result must not invoke the host again",
-    );
-    assert.deepEqual(
-      await f.client.result(
-        { context: f.context, cursor: originalOutstanding },
-        f.options,
-      ),
-      lost,
-    );
+    await assert.rejects(f.client.result({ context: f.context, cursor: forged }, f.options), /expired/);
+    assert.equal(invocations, 1, "The retained immutable result must not invoke the host again");
+    assert.deepEqual(await f.client.result({ context: f.context, cursor: originalOutstanding }, f.options), lost);
     const bytes: Uint8Array[] = [];
-    let page: { value?: ValueChunk | undefined; nextCursor: string } =
-      restarted;
+    let page: { value?: ValueChunk | undefined; nextCursor: string } = restarted;
     let finalCursor = "";
     for (;;) {
       assert.ok(page.value !== undefined);
       bytes.push(page.value.data);
       if (page.nextCursor === "") break;
       finalCursor = page.nextCursor;
-      page = await f.client.result(
-        { context: f.context, cursor: page.nextCursor },
-        f.options,
-      );
+      page = await f.client.result({ context: f.context, cursor: page.nextCursor }, f.options);
     }
-    const reconstructed = fromJsonString(
-      SaveResultSchema,
-      Buffer.concat(bytes).toString("utf8"),
-    );
+    const reconstructed = fromJsonString(SaveResultSchema, Buffer.concat(bytes).toString("utf8"));
     assert.equal(reconstructed.result.case, "accepted");
     assert.equal(reconstructed.result.value.document?.text, command.text);
     assert.equal(invocations, 1);
-    assert.deepEqual(
-      await f.client.result(
-        { context: f.context, cursor: finalCursor },
-        f.options,
-      ),
-      page,
-    );
+    assert.deepEqual(await f.client.result({ context: f.context, cursor: finalCursor }, f.options), page);
     // A lost final reply with no retained client stage reads the durable witness anew.
     const completedRetry = await f.result(
       await f.client.save({ context: f.context, command }, f.options),
@@ -547,10 +417,7 @@ await test("fresh explicit save retries reconstruct long active and completed re
     assert.equal(invocations, 2);
     assert.equal(f.host.saveEffects, 1);
     assert.deepEqual(
-      await f.client.result(
-        { context: f.context, cursor: finalCursor },
-        f.options,
-      ),
+      await f.client.result({ context: f.context, cursor: finalCursor }, f.options),
       page,
       "Fresh witness retrieval preserves the prior final cursor tombstone",
     );
