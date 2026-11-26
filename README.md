@@ -39,10 +39,10 @@ vim.api.nvim_create_autocmd("User", {
 | Lua action | Behavior |
 | --- | --- |
 | `documents()` | Choose a bound specification or plan. |
-| `comment()` / `comment_selection()` | Prompt for a comment on the current line or the active Visual selection. |
+| `comment()` / `comment_selection()` | Prompt for a comment on the current line or the lines in the active Visual selection. |
 | `responses()` / `changes()` | Inspect a short outcome or jump to its changes if the location still matches. |
 | `compare()` / `resolve()` | Compare an incoming revision and adopt it as the base after merging locally. |
-| `reload()` | Request fresh state. Call `reload(true)` to explicitly discard local edits. |
+| `reload(true)` | Discard local edits and restore the incoming revision if present, otherwise the last known revision. Reconcile any pending save first. |
 | `reconnect()` | Reconnect to the same document source when it is available. |
 
 Use Neovim's `:write` to submit a revision-checked edit. Clean buffers follow changes from Studio. If a revision conflicts with unsaved text, compare it, merge locally, resolve it, then write again. Freezing and approval remain explicit Studio actions. The comment prompt sends the exact text, including unsaved edits, to the owning conversation. Enter sends and Escape cancels. The full response stays in Studio chat. [Recovery behavior](docs/architecture.md)
