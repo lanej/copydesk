@@ -1,6 +1,8 @@
 -- Thin ProtoJSON edge. The descriptor table is generated from the frozen v1
 -- schema; CEL equivalents below are checked by rule ID, never skipped.
 local M = {}
+local module_path = debug.getinfo(1, "S").source:sub(2)
+local schema_path = vim.fs.joinpath(vim.fs.dirname(vim.fs.dirname(module_path)), "copydesk_schema.json")
 local schemas
 local number_mt, array_mt = {}, {}
 local maximum_u64 = "18446744073709551615"
@@ -192,9 +194,7 @@ M.integer = integer
 
 local function load_schema()
 	if not schemas then
-		local path = vim.api.nvim_get_runtime_file("copydesk_schema.json", false)[1]
-		assert(path, "Editor protocol schema is missing")
-		schemas = vim.json.decode(table.concat(vim.fn.readfile(path), "\n"))
+		schemas = vim.json.decode(table.concat(vim.fn.readfile(schema_path), "\n"))
 	end
 	return schemas
 end

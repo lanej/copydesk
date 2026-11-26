@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn, execFile, type ChildProcess } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
+import { cp, mkdtemp, mkdir, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { create, clone, equals } from "@bufbuild/protobuf";
@@ -35,11 +35,37 @@ let processHandle: ChildProcess | undefined;
 let stderr = "";
 const runtime = resolve("resources/nvim");
 const assertions: string[] = [];
+const lazyPath = process.env["COPYDESK_ACCEPTANCE_LAZY"] ?? "";
+const installed = lazyPath !== "";
+const commentKey = installed ? ",cc" : ",sc";
+const pluginRoot = join(directory, "lazy", "copydesk");
+const installedFixture = installed
+  ? `vim.opt.runtimepath:prepend(${JSON.stringify(lazyPath)})
+require("lazy").setup({
+  { dir = ${JSON.stringify(pluginRoot)}, name = "copydesk", lazy = true,
+    opts = { keymaps = { comment = "<localleader>cc", responses = false } } },
+}, { root = ${JSON.stringify(join(directory, "lazy"))}, change_detection = { enabled = false }, pkg = { enabled = false } })`
+  : "";
+if (installed) {
+  await mkdir(pluginRoot, { recursive: true });
+  await cp("lua", join(pluginRoot, "lua"), { recursive: true });
+  await cp("copydesk_schema.json", join(pluginRoot, "copydesk_schema.json"));
+}
 await mkdir(output, { recursive: true });
 await mkdir(join(directory, "config/nvim"), { recursive: true });
 await writeFile(
   join(directory, "config/nvim/init.lua"),
-  `vim.g.editor_acceptance_init = true\nvim.g.maplocalleader = ','\nvim.o.winbar = 'User window'\nvim.api.nvim_create_user_command('EditorCommentary', function() end, {})\nvim.notify = function(message) vim.g.editor_last_notice = message end\nvim.api.nvim_create_autocmd('User', {pattern = 'CopydeskAttach', callback = function(event) local copydesk = require('copydesk'); vim.keymap.set('n', ',cc', copydesk.comment, {buffer = event.data.buf}); vim.keymap.set('x', ',cc', copydesk.comment_selection, {buffer = event.data.buf}) end})\n`,
+  `vim.g.editor_acceptance_init = true
+vim.g.maplocalleader = ","
+vim.o.winbar = "User window"
+vim.api.nvim_create_user_command("EditorCommentary", function() end, {})
+vim.notify = function(message) vim.g.editor_last_notice = message end
+vim.api.nvim_create_autocmd("User", {
+  pattern = "CopydeskAttach",
+  callback = function(event) vim.b[event.data.buf].copydesk_fixture_attached = true end,
+})
+${installedFixture}
+`,
 );
 async function lua(code: string): Promise<unknown> {
   const expression =
@@ -254,16 +280,37 @@ try {
   await lua(doc + "vim.api.nvim_set_current_buf(d.buffer); return true");
   assert.equal(await lua(doc + "return vim.bo[d.buffer].filetype"), "markdown");
   assert.equal(
-    await lua(doc + 'return vim.fn.maparg(",cc", "x", false, true).buffer'),
+    await lua(
+      doc +
+        `return vim.b[d.buffer].copydesk_fixture_attached and vim.fn.maparg("${commentKey}", "x", false, true).buffer`,
+    ),
     1,
+    "the effective comment mapping is buffer-local before the attach event returns",
   );
-  assert.equal(await lua('return vim.fn.maparg(",sc", "x")'), "");
+  assert.equal(
+    await lua(
+      doc + 'return vim.fn.maparg(",sr", "n", false, true).buffer == 1',
+    ),
+    !installed,
+    "Lazy opts can disable one default mapping",
+  );
+  assert.equal(
+    await lua(
+      `local b = vim.api.nvim_create_buf(false, true); local found = vim.api.nvim_buf_call(b, function() return vim.fn.maparg("${commentKey}", "n") end); vim.api.nvim_buf_delete(b, {force = true}); return found`,
+    ),
+    "",
+    "ordinary buffers have no Copydesk mappings",
+  );
+  assert.equal(
+    await lua(`return vim.fn.maparg("${installed ? ",sc" : ",cc"}", "x")`),
+    "",
+  );
   await lua(
     doc +
       'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Unsaved 🦉 selected text."}); return true',
   );
   const beforeCancel = provider.feedbackEffects;
-  await lua('vim.api.nvim_input("3G,cc"); return true');
+  await lua(`vim.api.nvim_input("3G${commentKey}"); return true`);
   await wait(
     "current-line comment opens beside the source window",
     async () =>
@@ -282,7 +329,7 @@ try {
   );
   assert.equal(provider.feedbackEffects, beforeCancel);
 
-  await lua('vim.api.nvim_input("4GVk,cc"); return true');
+  await lua(`vim.api.nvim_input("4GVk${commentKey}"); return true`);
   await wait(
     "selection comment enters the prompt",
     async () =>
@@ -599,7 +646,7 @@ try {
       true,
   );
   await lua(
-    'local m = require("copydesk"); m.stop(); local c = vim.deepcopy(m.inspect().connection); c.context.session.conversationId = "foreign-conversation"; vim.g.foreign_reconnect_rejected = not pcall(m.setup, c); m.setup(); return true',
+    'local m = require("copydesk"); m.stop(); local c = vim.deepcopy(m.inspect().connection); c.context.session.conversationId = "foreign-conversation"; vim.g.foreign_reconnect_rejected = not pcall(m.attach, c); m.attach(); return true',
   );
   await wait(
     "foreign reconnect cannot retarget retained document identity",

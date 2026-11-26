@@ -1,5 +1,5 @@
 local root = assert(vim.env.COPYDESK_RUNTIME)
-vim.opt.runtimepath:append(root)
+vim.opt.runtimepath:append(vim.fs.dirname(vim.fs.dirname(root)))
 local wire = require("copydesk_wire")
 local uv = vim.uv
 local function read(path)

@@ -16,6 +16,8 @@ local state = {
 local wire = require("copydesk_wire")
 local client_factory = require("copydesk_client")
 local comment_prompt = require("copydesk_prompt")
+local keymaps = require("copydesk_keymaps")
+local mappings = keymaps.resolve()
 
 local function notify(message, level)
 	vim.notify("Copydesk: " .. message, level or vim.log.levels.INFO)
@@ -479,6 +481,7 @@ local function create_document(snapshot, projection_path)
 		end,
 	})
 	apply_snapshot(document, snapshot, true)
+	keymaps.bind(buffer, M, mappings)
 	local attached, failure = pcall(vim.api.nvim_exec_autocmds, "User", {
 		pattern = "CopydeskAttach",
 		data = { buf = buffer },
@@ -794,7 +797,10 @@ function M.reload(force)
 		return
 	end
 	if not force then
-		notify("Compare and merge the incoming revision, or explicitly discard local edits to reload", vim.log.levels.WARN)
+		notify(
+			"Compare and merge the incoming revision, or explicitly discard local edits to reload",
+			vim.log.levels.WARN
+		)
 		return
 	end
 	local snapshot = document.incoming
@@ -890,15 +896,27 @@ end
 
 function M.reconnect()
 	M.stop()
-	M.setup()
+	M.attach()
 end
 
-function M.setup(connection)
+function M.setup(opts)
+	-- Older bundled launchers call setup() without an options table.
+	if opts == nil and (vim.env.COPYDESK_CONNECTION or vim.env.EDITOR_INTEROP_CONNECTION) then
+		return M.attach()
+	end
+	vim.validate("opts", opts, "table", true)
+	mappings = keymaps.resolve((opts or {}).keymaps)
+end
+
+function M.attach(connection)
 	if not state.stopped then
 		return
 	end
 	if not connection then
-		local path = assert(vim.env.COPYDESK_CONNECTION or vim.env.EDITOR_INTEROP_CONNECTION, "Editor connection manifest is missing")
+		local path = assert(
+			vim.env.COPYDESK_CONNECTION or vim.env.EDITOR_INTEROP_CONNECTION,
+			"Editor connection manifest is missing"
+		)
 		connection = wire.decode("ConnectionManifest", table.concat(vim.fn.readfile(path), "\n"))
 	else
 		connection = wire.validate("ConnectionManifest", connection)

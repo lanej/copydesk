@@ -19,22 +19,38 @@ enabled = true
 
 The first ready specification or plan opens in a centered floating pane, using your normal Neovim configuration. Studio keeps keyboard focus. Switch to the pane to edit. Later updates reuse it. If you close it, use `/documents` in Studio to reopen it. [Studio setup guide](https://github.com/lanej/studio/blob/main/docs/neovim-documents.md)
 
-### Configure Neovim
+### Install and configure the Neovim plugin
 
-Copydesk exposes actions through `require("copydesk")`. Put mappings in your Neovim configuration. The `User CopydeskAttach` event fires for each initialized document buffer and provides its buffer number in `event.data.buf`. Register the autocmd at startup and require Copydesk inside its callback, where the runtime is available.
+Copydesk ships as a regular Neovim plugin. Studio can use the plugin from your normal Neovim configuration or load the copy bundled with its host package. Both paths use the same defaults, and mappings appear only in Copydesk document buffers.
+
+Install with [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
-vim.api.nvim_create_autocmd("User", {
-  pattern = "CopydeskAttach",
-  callback = function(event)
-    local copydesk = require("copydesk")
-    local opts = { buffer = event.data.buf }
-    vim.keymap.set("n", "<localleader>sc", copydesk.comment, opts)
-    vim.keymap.set("x", "<localleader>sc", copydesk.comment_selection, opts)
-    vim.keymap.set("n", "<localleader>ss", copydesk.documents, opts)
-  end,
-})
+{
+  "lanej/copydesk",
+  opts = {
+    keymaps = {
+      comment = "<localleader>cc", -- Normal and Visual mode
+      reload = false,
+    },
+  },
+}
 ```
+
+Use `opts = {}` for the defaults. Each action takes a replacement key sequence or `false` to disable it. Use `keymaps = false` to disable all mappings. For another plugin manager, call `require("copydesk").setup(opts)` during configuration. Setup with an options table configures future document buffers and does not open a connection.
+
+| Option | Default | Action |
+| --- | --- | --- |
+| `comment` | `<localleader>sc` | Comment on the current line or Visual selection. |
+| `documents` | `<localleader>ss` | Choose a document. |
+| `responses` | `<localleader>sr` | Inspect responses. |
+| `changes` | `<localleader>sd` | Jump to changes. |
+| `compare` | `<localleader>sv` | Compare local and incoming revisions. |
+| `resolve` | `<localleader>sm` | Adopt the incoming revision after merging. |
+| `reload` | `<localleader>sl` | Confirm before discarding local edits. |
+| `reconnect` | `<localleader>sx` | Reconnect to the same host session. |
+
+The Lua actions remain available for custom integrations. `User CopydeskAttach` fires after a document buffer and its mappings are ready. Its `event.data.buf` field contains the buffer number.
 
 | Lua action | Behavior |
 | --- | --- |
@@ -80,12 +96,12 @@ const workspace = await createWorkspace({
 await workspace.open();
 ```
 
-The launcher sets `COPYDESK_RUNTIME` and `COPYDESK_CONNECTION`, then loads `bootstrap.lua` after Neovim's ordinary startup. The runtime connects directly to the host over a private Unix socket. Call `workspace.dispose()` when the host ends the activation. Use `@lanej/copydesk/protocol` for generated schemas and `@lanej/copydesk/testing` for host-conformance cases. The package runs independently of Studio, Pi, Beads, and Zellij. [Host boundaries](docs/architecture.md) · [Protocol](docs/protocol.md)
+The launcher sets `COPYDESK_RUNTIME` and `COPYDESK_CONNECTION`, then loads `bootstrap.lua` after Neovim's ordinary startup. The bootstrap calls `require("copydesk").attach()` on a configured plugin or the fallback copy. Attachment validates the manifest protocol before connecting. The runtime connects directly to the host over a private Unix socket. Call `workspace.dispose()` when the host ends the activation. Use `@lanej/copydesk/protocol` for generated schemas and `@lanej/copydesk/testing` for host-conformance cases. The package runs independently of Studio, Pi, Beads, and Zellij. [Host boundaries](docs/architecture.md) · [Protocol](docs/protocol.md)
 
 ## Upgrade from Editor Interop
 
 - **Package.** Change the dependency key and import paths from `@lanej/editor-interop` to `@lanej/copydesk`, update the Git source and pin, and regenerate the consumer lockfile. The `/protocol`, `/neovim`, and `/testing` exports are unchanged. Use the Git transport shown above during the repository move. A Bun GitHub shorthand pin checks the archive checksum, which can change when the repository is renamed even at the same commit. If you maintain an older frozen checkout, update its dependency source and lockfile before reinstalling.
-- **Neovim.** Replace mappings for old Ex commands with Lua callbacks configured on `CopydeskAttach`. The `require("editor_interop")` Lua entry point and the highlight and buffer metadata names remain available for existing integrations.
+- **Neovim.** Replace old Ex mappings with Copydesk defaults, `setup(opts)` overrides, or custom Lua callbacks. The `require("editor_interop")` Lua entry point and the highlight and buffer metadata names remain available for existing integrations.
 - **Launchers.** Use the `COPYDESK_*` variables. The bootstrap accepts `EDITOR_INTEROP_RUNTIME` and `EDITOR_INTEROP_CONNECTION` as fallbacks. The `editorinterop.v1.EditorInteropService` wire name and persisted manifest and document paths are unchanged.
 
 ## Verify a change

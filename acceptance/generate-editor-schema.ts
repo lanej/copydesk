@@ -45,10 +45,7 @@ const schema = Object.fromEntries(
   ]),
 );
 const output = `${JSON.stringify(schema, null, 2)}\n`;
-const target = new URL(
-  "../resources/nvim/copydesk_schema.json",
-  import.meta.url,
-);
+const target = new URL("../copydesk_schema.json", import.meta.url);
 if (process.argv.includes("--check")) {
   if ((await readFile(target, "utf8")) !== output)
     throw new Error(
