@@ -585,7 +585,7 @@ try {
     async () =>
       (await lua(
         doc +
-          'local terminal = false; for _, stored in pairs(s.feedback) do local receipt = type(stored) == "string" and s.client:read_receipt(stored) or stored; terminal = (receipt.state == "FEEDBACK_STATE_ANSWERED" or receipt.state == "answered") and receipt.responseId == "actual-response-one" and receipt.generation == "activation-one" end; return s.connected and not d.detached and vim.bo[d.buffer].modified and terminal and vim.wo.winbar:find("Editor", 1, true) ~= nil',
+          'local terminal = false; for _, stored in pairs(s.feedback) do local receipt = type(stored) == "string" and s.client:read_receipt(stored) or stored; terminal = (receipt.state == "FEEDBACK_STATE_ANSWERED" or receipt.state == "answered") and receipt.responseId == "actual-response-one" and receipt.generation == "activation-one" end; return s.connected and not d.detached and vim.bo[d.buffer].modified and terminal and vim.wo.winbar:find("Copydesk ·", 1, true) ~= nil',
       )) === true,
   );
   await lua('vim.cmd("CopydeskReconnect"); return true');

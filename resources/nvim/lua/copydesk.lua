@@ -482,19 +482,19 @@ local function create_document(snapshot, projection_path)
 		{ "n", "x" },
 		"<localleader>sc",
 		":CopydeskComment<CR>",
-		{ buffer = buffer, desc = "Send Editor document comment" }
+		{ buffer = buffer, desc = "Send Copydesk document comment" }
 	)
 	vim.keymap.set(
 		"n",
 		"<localleader>sr",
 		"<Cmd>CopydeskResponses<CR>",
-		{ buffer = buffer, desc = "Inspect Editor responses" }
+		{ buffer = buffer, desc = "Inspect Copydesk responses" }
 	)
 	vim.keymap.set(
 		"n",
 		"<localleader>sd",
 		"<Cmd>CopydeskChanges<CR>",
-		{ buffer = buffer, desc = "Jump to Editor changes" }
+		{ buffer = buffer, desc = "Jump to Copydesk changes" }
 	)
 	apply_snapshot(document, snapshot, true)
 	if not state.opened then
