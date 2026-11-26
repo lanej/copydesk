@@ -50,7 +50,7 @@ Use ordinary buffers and `:write` to submit an explicit save. Clean buffers foll
 | `:EditorCompare` / `:EditorResolve` | Compare and reconcile a conflicting revision. |
 | `:EditorReload` | Request fresh host state. |
 
-Full answers remain in the host conversation. Receiving feedback does not mean it was answered, and an answer does not imply a conflicting edit was applied. Saving, reading and commenting never approve, freeze or dispatch a host workflow.
+The comment input opens below the selected lines or the cursor line. Type your feedback and press Enter to send or Escape to cancel. Full answers remain in the host conversation. Receiving feedback does not mean it was answered, and an answer does not imply a conflicting edit was applied. Saving, reading and commenting never approve, freeze or dispatch a host workflow.
 
 ## Development
 

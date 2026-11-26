@@ -15,6 +15,7 @@ local state = {
 }
 local wire = require("editor_interop_wire")
 local client_factory = require("editor_interop_client")
+local comment_prompt = require("editor_interop_prompt")
 
 local function notify(message, level)
 	vim.notify("Editor: " .. message, level or vim.log.levels.INFO)
@@ -734,7 +735,7 @@ function M.comment(first_line, last_line, supplied_message)
 	if supplied_message ~= nil then
 		submit(supplied_message)
 	else
-		vim.ui.input({ prompt = "Editor comment: " }, submit)
+		comment_prompt.open(buffer, first_line, last_line, submit)
 	end
 end
 
@@ -820,6 +821,7 @@ function M.reload(force)
 end
 
 function M.stop()
+	comment_prompt.cancel()
 	state.stopped, state.connected, state.syncing = true, false, false
 	state.epoch = state.epoch + 1
 	each_document(function(document)
