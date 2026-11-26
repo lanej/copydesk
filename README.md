@@ -1,68 +1,84 @@
-# Editor Interop
+# Copydesk
 
-Edit host-owned Markdown documents in Neovim and send selected text with a message to their owning conversation. The host retains storage, validation, approvals and conversation authority. Studio is the first host adapter; the package and its native editor acceptance do not depend on Studio, Pi, Beads or Zellij.
+Review and revise Studio specifications and plans in Neovim. Copydesk opens full documents from the owning conversation, sends selected text and comments back to that conversation, and shows what changed after Studio responds.
 
-The package targets Bun 1.4.5 or newer. Native acceptance uses Neovim 0.12.6 on macOS and Linux. The v1 API is provisional; consumers should pin an exact source revision.
+Studio is the first host. It owns the drafts, conversation, validation, and approvals. Copydesk provides the editor connection and also works with other hosts that implement its interfaces.
 
-## Integration
+## Use Copydesk with Studio
 
-A host supplies two interfaces to `createWorkspace`:
+Enable Neovim and Zellij in Studio's configuration, then start or reload Studio inside a supported Zellij session.
 
-| Interface | What the host supplies |
-|---|---|
-| `HostProvider` | Consistent document/feedback snapshots, revision-checked saves with atomic commit witnesses, durable feedback admission, and change notifications. |
-| `EditorLauncher` | Launch/reuse, attachment inspection and process registration verification. A terminal multiplexer is optional. |
+```toml
+[integrations.neovim]
+enabled = true
+executable = "nvim"
 
-```ts
-import { createWorkspace } from '@lanej/editor-interop';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const workspace = await createWorkspace({
-  context, // Generated CallContext with opaque session IDs and activation generation.
-  provider, // Your HostProvider implementation.
-  launcher, // Your EditorLauncher implementation.
-  directory: privateSessionDirectory,
-  runtimePath: dirname(fileURLToPath(import.meta.resolve('@lanej/editor-interop/neovim'))),
-  workingDirectory: projectDirectory,
-  title: 'Planning documents',
-});
-
-// Explicit reopen after a manually closed editor:
-await workspace.open();
-// End this activation while preserving editor text and recovery evidence:
-await workspace.dispose();
+[integrations.zellij]
+enabled = true
 ```
 
-The package creates a private Unix socket, connection manifest and projection files. It opens the editor when the first draft is available, preserves focus and reuses a verified attachment. The launcher loads `bootstrap.lua` after normal user initialization and supplies `EDITOR_INTEROP_CONNECTION` and `EDITOR_INTEROP_RUNTIME`. See the [host interfaces](src/host.ts), [protocol](docs/protocol.md) and [authority boundaries](docs/architecture.md) for required behavior and failure handling. Generated wire schemas and types are exported from `@lanej/editor-interop/protocol`. Host authors can use `@lanej/editor-interop/testing` for an independent fixture provider/launcher and the shared host-conformance cases; these helpers do not implement production persistence.
+The first ready specification or plan opens in a centered floating pane, using your normal Neovim configuration. Studio keeps keyboard focus. Switch to the pane to edit. Later updates reuse it. If you close it, use `/documents` in Studio to reopen it. [Studio setup guide](https://github.com/lanej/studio/blob/main/docs/neovim-documents.md)
 
-## In Neovim
+### Edit, comment, and review
 
-Use ordinary buffers and `:write` to submit an explicit save. Clean buffers follow accepted host revisions; dirty buffers retain local text and offer comparison and reconciliation. An interrupted request remains uncertain until authoritative evidence resolves it.
+1. **Open a draft.** Use `:CopydeskDocuments` to choose the full specification or plan.
+2. **Save an edit.** Edit the Markdown buffer and run `:write`. Studio validates the draft and accepts it against the revision you opened. Freezing the specification and approving the plan remain separate Studio actions.
+3. **Ask about a passage.** Select lines and run `:'<,'>CopydeskComment`, or use `<localleader>sc`. With no selection the command attaches the current line. The prompt opens beside the text. Enter sends the comment with the exact selected text, including unsaved edits. Escape cancels. The full reply stays in Studio chat.
+4. **See the outcome.** Use `:CopydeskResponses` for short outcomes and `:CopydeskChanges` to jump to resulting edits when their locations still match. An answer can also explain a decision without changing the document.
 
-| Command | Action |
-|---|---|
-| `:EditorDocuments` | Inspect the bound documents. |
-| `:EditorComment` | Attach a message to the current buffer line. |
-| `:'<,'>EditorComment` | Attach a message to the actual selected buffer lines, including unsaved text. |
-| `:EditorResponses` | Inspect concise request outcomes and revision-safe locations. |
-| `:EditorChanges` | Inspect incoming changes. |
-| `:EditorCompare` / `:EditorResolve` | Compare and reconcile a conflicting revision. |
-| `:EditorReload` | Request fresh host state. |
+Clean buffers follow accepted Studio revisions. If you have unsaved edits, Copydesk holds the incoming revision for comparison. Use `:CopydeskCompare`, merge the text you want into your buffer, then run `:CopydeskResolve` and `:write`. Use `:CopydeskReload!` only when you want to discard local edits. If the connection drops, the draft stays in Neovim on a normal Studio quit. `:CopydeskReconnect` attempts to reconnect to the same document source when it is available. [Recovery behavior](docs/architecture.md)
 
-The comment input opens next to the selected lines or the cursor. Type your feedback and press Enter to send or Escape to cancel. Full answers remain in the host conversation. Receiving feedback does not mean it was answered, and an answer does not imply a conflicting edit was applied. Saving, reading and commenting never approve, freeze or dispatch a host workflow.
+## Integrate another host
 
-## Development
+Copydesk is a private, source-pinned Bun package. Install from a full Copydesk commit SHA. Bun 1.4.5 or newer is required. Native acceptance uses Neovim 0.12.6 on Linux and macOS.
+
+```json
+{
+  "dependencies": {
+    "@lanej/copydesk": "git+https://github.com:443/lanej/copydesk.git#<full-commit-sha>"
+  }
+}
+```
+
+Implement [`HostProvider` and `EditorLauncher`](src/host.ts). The provider supplies authoritatively versioned documents, atomic saves and receipts, feedback admission, and change notifications. The launcher supplies editor process identity, attachment checks, and pane placement if applicable.
+
+```ts
+import { createWorkspace } from "@lanej/copydesk";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const workspace = await createWorkspace({
+  context, // The host session identity and activation generation.
+  provider,
+  launcher,
+  directory: privateSessionDirectory,
+  runtimePath: dirname(fileURLToPath(import.meta.resolve("@lanej/copydesk/neovim"))),
+  workingDirectory: projectDirectory,
+  title: "Planning documents",
+});
+
+// For an explicit operator action after the editor was closed:
+await workspace.open();
+```
+
+The launcher sets `COPYDESK_RUNTIME` and `COPYDESK_CONNECTION`, then loads `bootstrap.lua` after Neovim's ordinary startup. The runtime connects directly to the host over a private Unix socket. Call `workspace.dispose()` when the host ends the activation. Use `@lanej/copydesk/protocol` for generated schemas and `@lanej/copydesk/testing` for host-conformance cases. The package runs independently of Studio, Pi, Beads, and Zellij. [Host boundaries](docs/architecture.md) · [Protocol](docs/protocol.md)
+
+## Upgrade from Editor Interop
+
+- **Package.** Change the dependency key and import paths from `@lanej/editor-interop` to `@lanej/copydesk`, update the Git source and pin, and regenerate the consumer lockfile. The `/protocol`, `/neovim`, and `/testing` exports are unchanged. Use the Git transport shown above during the repository move. A Bun GitHub shorthand pin checks the archive checksum, which can change when the repository is renamed even at the same commit. If you maintain an older frozen checkout, update its dependency source and lockfile before reinstalling.
+- **Neovim.** Migrate mappings to the `:Copydesk…` commands. Existing `:Editor…` aliases and the `require("editor_interop")` entry point still work. Existing highlight groups and buffer metadata retain their names for user themes and integrations.
+- **Launchers.** Use the `COPYDESK_*` variables. The bootstrap accepts `EDITOR_INTEROP_RUNTIME` and `EDITOR_INTEROP_CONNECTION` as fallbacks. The `editorinterop.v1.EditorInteropService` wire name and persisted manifest and document paths are unchanged.
+
+## Verify a change
 
 ```sh
 bun install --frozen-lockfile --ignore-scripts
 npm ci --prefix .typescript-quality --ignore-scripts
 python3 scripts/check-source-code.py typescript
+bun run test:package
 python3 scripts/check-protobuf.py tools
 python3 scripts/check-source-code.py protobuf
 bun run test:editor
 ```
 
-TypeScript checks include a structural import/cycle gate and contract tests. Protobuf checks use the explicit [initial schema baseline](api-baseline/README.md) until an integration-branch schema exists; later CI compares against the actual PR base. Native acceptance runs the real editor against a small independent host. Studio's full integration acceptance belongs to Studio.
-
-Source and generated dependency provenance are recorded in [NOTICE.md](NOTICE.md).
+The native test opens Neovim against an independent fixture host. Studio's own acceptance checks the full Studio, Zellij, and Neovim workflow. [License](LICENSE.md) · [Source and dependency notices](NOTICE.md)

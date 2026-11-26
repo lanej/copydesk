@@ -192,7 +192,7 @@ M.integer = integer
 
 local function load_schema()
 	if not schemas then
-		local path = vim.api.nvim_get_runtime_file("editor_interop_schema.json", false)[1]
+		local path = vim.api.nvim_get_runtime_file("copydesk_schema.json", false)[1]
 		assert(path, "Editor protocol schema is missing")
 		schemas = vim.json.decode(table.concat(vim.fn.readfile(path), "\n"))
 	end

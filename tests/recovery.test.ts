@@ -32,13 +32,13 @@ await test("a killed host leaves a stale socket and a fresh activation reuses it
     const context = create(CallContextSchema, { session: { providerId: 'recovery', projectId: 'project', conversationId: 'chat' }, generation: 'before-crash' });
     const host = new FakeHostProvider(context, 'owner');
     host.seedDocument(create(DocumentSnapshotSchema, { ref: { session: context.session, ownerId: 'owner', documentId: 'spec' }, revision: 'r1', title: 'Specification', text: 'Before crash', writable: true }));
-    await createWorkspace({ context, provider: host, launcher: new FakeLauncher(), directory: process.env.EDITOR_INTEROP_TEST_DIRECTORY, runtimePath: process.cwd() + '/resources/nvim', workingDirectory: process.cwd(), title: 'Crash test' });
+    await createWorkspace({ context, provider: host, launcher: new FakeLauncher(), directory: process.env.COPYDESK_TEST_DIRECTORY, runtimePath: process.cwd() + '/resources/nvim', workingDirectory: process.cwd(), title: 'Crash test' });
     process.stdout.write('ready\\n');
   `,
     ],
     {
       cwd: process.cwd(),
-      env: { ...process.env, EDITOR_INTEROP_TEST_DIRECTORY: directory },
+      env: { ...process.env, COPYDESK_TEST_DIRECTORY: directory },
       stdio: ["ignore", "pipe", "pipe"],
     },
   );

@@ -1,4 +1,4 @@
-# Editor Interop
+# Copydesk
 
 Keep the interoperability package independently buildable and testable. Do not import Studio application types, Pi hooks, Beads/task-runtime implementations, or a specific pane launcher into the core. Hosts implement the package-owned document authority and conversation interfaces.
 

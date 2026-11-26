@@ -25,9 +25,9 @@ import {
 } from "../src/generated/editorinterop/v1/editor_interop_pb.js";
 
 const execute = promisify(execFile);
-const nvim = process.env["EDITOR_INTEROP_NVIM"] ?? "nvim";
+const nvim = process.env["COPYDESK_NVIM"] ?? "nvim";
 const output = resolve(
-  process.env["EDITOR_INTEROP_ACCEPTANCE_OUTPUT"] ?? "artifacts/editor",
+  process.env["COPYDESK_ACCEPTANCE_OUTPUT"] ?? "artifacts/editor",
 );
 const directory = await mkdtemp(join(tmpdir(), "ei-"));
 const rpc = join(directory, "nvim.sock");
@@ -39,7 +39,7 @@ await mkdir(output, { recursive: true });
 await mkdir(join(directory, "config/nvim"), { recursive: true });
 await writeFile(
   join(directory, "config/nvim/init.lua"),
-  `vim.g.editor_acceptance_init = true\nvim.g.maplocalleader = ','\nvim.o.winbar = 'User window'\nvim.notify = function(message) vim.g.editor_last_notice = message end\n`,
+  `vim.g.editor_acceptance_init = true\nvim.g.maplocalleader = ','\nvim.o.winbar = 'User window'\nvim.api.nvim_create_user_command('EditorCommentary', function() end, {})\nvim.notify = function(message) vim.g.editor_last_notice = message end\n`,
 );
 async function lua(code: string): Promise<unknown> {
   const expression =
@@ -99,20 +99,21 @@ async function capture(width: number, name: string): Promise<string> {
     {
       env: {
         ...process.env,
-        EDITOR_INTEROP_CAPTURE_SOCKET: rpc,
-        EDITOR_INTEROP_CAPTURE_WIDTH: String(width),
-        EDITOR_INTEROP_CAPTURE_HEIGHT: "20",
-        EDITOR_INTEROP_CAPTURE_OUTPUT: target,
+        COPYDESK_CAPTURE_SOCKET: rpc,
+        COPYDESK_CAPTURE_WIDTH: String(width),
+        COPYDESK_CAPTURE_HEIGHT: "20",
+        COPYDESK_CAPTURE_OUTPUT: target,
       },
       timeout: 10000,
     },
   );
   return readFile(target, "utf8");
 }
-const state = 'local s = require("editor_interop").inspect(); ';
+const state = 'local s = require("copydesk").inspect(); ';
 const doc =
   state +
   'local d; for _, candidate in pairs(s.documents) do if candidate.ref.documentId == "spec" then d = candidate end end; ';
+const legacyLauncher = process.env["COPYDESK_ACCEPTANCE_LEGACY"] === "1";
 const launcher: EditorLauncher = {
   ensure(request: LaunchRequest): Promise<AttachmentState> {
     if (processHandle === undefined) {
@@ -126,7 +127,7 @@ const launcher: EditorLauncher = {
           "--listen",
           rpc,
           "-c",
-          'lua dofile(vim.env.EDITOR_INTEROP_RUNTIME .. "/bootstrap.lua")',
+          'lua dofile((vim.env.COPYDESK_RUNTIME or vim.env.EDITOR_INTEROP_RUNTIME) .. "/bootstrap.lua")',
         ],
         {
           cwd: directory,
@@ -136,8 +137,14 @@ const launcher: EditorLauncher = {
             XDG_DATA_HOME: join(directory, "data"),
             XDG_STATE_HOME: join(directory, "state"),
             XDG_CACHE_HOME: join(directory, "cache"),
-            EDITOR_INTEROP_RUNTIME: runtime,
-            EDITOR_INTEROP_CONNECTION: request.manifestPath,
+            COPYDESK_RUNTIME: legacyLauncher ? undefined : runtime,
+            COPYDESK_CONNECTION: legacyLauncher
+              ? undefined
+              : request.manifestPath,
+            EDITOR_INTEROP_RUNTIME: legacyLauncher ? runtime : undefined,
+            EDITOR_INTEROP_CONNECTION: legacyLauncher
+              ? request.manifestPath
+              : undefined,
           },
           stdio: ["ignore", "pipe", "pipe"],
         },
@@ -219,8 +226,8 @@ try {
     {
       env: {
         ...process.env,
-        EDITOR_INTEROP_RUNTIME: runtime,
-        EDITOR_INTEROP_FIXTURES: resolve("tests/fixtures"),
+        COPYDESK_RUNTIME: runtime,
+        COPYDESK_FIXTURES: resolve("tests/fixtures"),
       },
       timeout: 180000,
     },
@@ -237,6 +244,12 @@ try {
         doc +
           "return vim.g.editor_acceptance_init and d ~= nil and s.connected and vim.tbl_count(s.documents) == 2",
       )) === true,
+  );
+  assert.equal(
+    await lua(
+      'return require("copydesk") == require("editor_interop") and vim.fn.exists(":CopydeskComment") == 2 and vim.fn.exists(":EditorComment") == 2',
+    ),
+    true,
   );
   await lua(doc + "vim.api.nvim_set_current_buf(d.buffer); return true");
   assert.equal(await lua(doc + "return vim.bo[d.buffer].filetype"), "markdown");
@@ -268,7 +281,11 @@ try {
   );
   assert.equal(provider.feedbackEffects, beforeCancel);
 
-  await lua('vim.api.nvim_input("3GVj,sc"); return true');
+  await lua(
+    legacyLauncher
+      ? 'vim.api.nvim_input("3GVj:EditorComment<CR>"); return true'
+      : 'vim.api.nvim_input("3GVj:CopydeskComment<CR>"); return true',
+  );
   await wait(
     "selection comment enters the prompt",
     async () =>
@@ -278,6 +295,12 @@ try {
   );
   await lua(
     'vim.api.nvim_input("Is this something we really want?"); return true',
+  );
+  assert.equal(
+    await lua(
+      'return vim.wo.winhighlight == "FloatBorder:EditorCommentBorder,FloatFooter:EditorCommentBorder" and vim.api.nvim_get_hl(0, {name = "EditorCommentBorder"}).fg == 0xb48ead',
+    ),
+    true,
   );
   const composer = await capture(90, "feedback-composer");
   const composerRows = composer.split("\n");
@@ -408,10 +431,10 @@ try {
   assertions.push(
     "actual narrow and normal UI grids retain conflict and outcome markers",
   );
-  await lua('require("editor_interop").resolve(); return true');
+  await lua('require("copydesk").resolve(); return true');
   assert.equal(await lua(doc + "return d.incoming ~= nil"), true);
   await lua(
-    'require("editor_interop").compare(); require("editor_interop").resolve(); vim.cmd("write"); return true',
+    'require("copydesk").compare(); require("copydesk").resolve(); vim.cmd("write"); return true',
   );
   await wait(
     "explicit comparison reconciliation and write",
@@ -447,12 +470,12 @@ try {
       )) === true,
   );
   await lua(
-    'vim.ui.select = function(items, _, callback) callback(items[1]) end; vim.cmd("EditorChanges"); return true',
+    'vim.ui.select = function(items, _, callback) callback(items[1]) end; vim.cmd("CopydeskChanges"); return true',
   );
   assert.equal(await lua("return vim.api.nvim_win_get_cursor(0)[1]"), 3);
   await lua(
     doc +
-      'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Dirty jump guard."}); vim.api.nvim_win_set_cursor(0, {1, 0}); vim.cmd("EditorChanges"); return true',
+      'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Dirty jump guard."}); vim.api.nvim_win_set_cursor(0, {1, 0}); vim.cmd("CopydeskChanges"); return true',
   );
   assert.equal(await lua("return vim.api.nvim_win_get_cursor(0)[1]"), 1);
   assertions.push("stale changed-location jump refused");
@@ -496,7 +519,7 @@ try {
     title: "Recover unconfirmed save",
   });
   await workspace.open();
-  await lua('vim.cmd("EditorReconnect"); return true');
+  await lua('vim.cmd("CopydeskReconnect"); return true');
   await wait(
     "reconnect retains exact pending save without automatic replay",
     async () =>
@@ -562,16 +585,16 @@ try {
     title: "Reconnected editor",
   });
   await workspace.open();
-  await lua('vim.cmd("EditorReconnect"); return true');
+  await lua('vim.cmd("CopydeskReconnect"); return true');
   await wait(
     "explicit reconnect preserves terminal feedback and dirty buffers",
     async () =>
       (await lua(
         doc +
-          'local terminal = false; for _, stored in pairs(s.feedback) do local receipt = type(stored) == "string" and s.client:read_receipt(stored) or stored; terminal = (receipt.state == "FEEDBACK_STATE_ANSWERED" or receipt.state == "answered") and receipt.responseId == "actual-response-one" and receipt.generation == "activation-one" end; return s.connected and not d.detached and vim.bo[d.buffer].modified and terminal and vim.wo.winbar:find("Editor", 1, true) ~= nil',
+          'local terminal = false; for _, stored in pairs(s.feedback) do local receipt = type(stored) == "string" and s.client:read_receipt(stored) or stored; terminal = (receipt.state == "FEEDBACK_STATE_ANSWERED" or receipt.state == "answered") and receipt.responseId == "actual-response-one" and receipt.generation == "activation-one" end; return s.connected and not d.detached and vim.bo[d.buffer].modified and terminal and vim.wo.winbar:find("Copydesk ·", 1, true) ~= nil',
       )) === true,
   );
-  await lua('vim.cmd("EditorReconnect"); return true');
+  await lua('vim.cmd("CopydeskReconnect"); return true');
   await wait(
     "same activation reconnect is idempotent",
     async () =>
@@ -579,7 +602,7 @@ try {
       true,
   );
   await lua(
-    'local m = require("editor_interop"); m.stop(); local c = vim.deepcopy(m.inspect().connection); c.context.session.conversationId = "foreign-conversation"; vim.g.foreign_reconnect_rejected = not pcall(m.setup, c); m.setup(); return true',
+    'local m = require("copydesk"); m.stop(); local c = vim.deepcopy(m.inspect().connection); c.context.session.conversationId = "foreign-conversation"; vim.g.foreign_reconnect_rejected = not pcall(m.setup, c); m.setup(); return true',
   );
   await wait(
     "foreign reconnect cannot retarget retained document identity",

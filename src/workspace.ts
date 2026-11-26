@@ -344,7 +344,7 @@ export async function createWorkspace(
             assertContext(request.context, activation);
             if (request.version?.major !== 1)
               throw new ConnectError(
-                "No compatible editor-interop version",
+                "No compatible Copydesk protocol version",
                 Code.FailedPrecondition,
               );
             const editor = required(request.editor, "editor registration");

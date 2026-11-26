@@ -1,8 +1,8 @@
 -- Attach a genuine Neovim UI grid without an external terminal or screenshot
 -- dependency. The cells are read after redraw, not reconstructed from buffers.
-local socket = assert(vim.env.EDITOR_INTEROP_CAPTURE_SOCKET)
-local width = tonumber(vim.env.EDITOR_INTEROP_CAPTURE_WIDTH) or 100
-local height = tonumber(vim.env.EDITOR_INTEROP_CAPTURE_HEIGHT) or 24
+local socket = assert(vim.env.COPYDESK_CAPTURE_SOCKET)
+local width = tonumber(vim.env.COPYDESK_CAPTURE_WIDTH) or 100
+local height = tonumber(vim.env.COPYDESK_CAPTURE_HEIGHT) or 24
 local channel = vim.fn.sockconnect("pipe", socket, { rpc = true })
 local ok, failure = pcall(function()
 	vim.rpcrequest(channel, "nvim_ui_attach", width, height, { rgb = true })
@@ -23,7 +23,7 @@ local ok, failure = pcall(function()
   ]],
 		{ width, height }
 	)
-	vim.fn.writefile(lines, assert(vim.env.EDITOR_INTEROP_CAPTURE_OUTPUT))
+	vim.fn.writefile(lines, assert(vim.env.COPYDESK_CAPTURE_OUTPUT))
 end)
 pcall(vim.rpcrequest, channel, "nvim_ui_detach")
 vim.fn.chanclose(channel)

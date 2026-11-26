@@ -26,22 +26,36 @@
     "enabled": true,
     "languages": [
       "javascript",
+      "protobuf",
       "typescript"
     ],
     "skills": [
       "javascript",
+      "protobuf",
       "typescript"
     ],
     "evidence": {
       "javascript": [
-        "package.json"
+        "package.json",
+        "scripts/check-boundary.mjs",
+        "scripts/check-generated.mjs",
+        "scripts/check-package.mjs"
+      ],
+      "protobuf": [
+        "buf.yaml",
+        "proto/editorinterop/v1/editor_interop.proto"
       ],
       "typescript": [
+        "acceptance/editor.ts",
+        "acceptance/generate-editor-schema.ts",
         "package.json",
-        "src/index.ts",
-        "tsconfig.json"
+        "src/chunks.ts",
+        "src/generated/buf/validate/validate_pb.ts"
       ]
-    }
+    },
+    "protobuf_roots": [
+      "."
+    ]
   },
   "skill_storage": "linked",
   "kind": "library",

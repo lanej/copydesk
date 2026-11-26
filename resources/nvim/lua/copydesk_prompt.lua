@@ -111,7 +111,7 @@ function M.open(buffer, first, last, submit)
 	end)
 	if not opened then
 		finish()
-		vim.notify("Editor: Cannot open the comment input: " .. tostring(failure), vim.log.levels.WARN)
+		vim.notify("Copydesk: Cannot open the comment input: " .. tostring(failure), vim.log.levels.WARN)
 	end
 end
 
