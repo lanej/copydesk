@@ -24,14 +24,10 @@ const schema = Object.fromEntries(
         ...(item.fieldKind === "message" ? { message: item.message.name } : {}),
         ...(item.fieldKind === "enum"
           ? {
-              values: Object.fromEntries(
-                item.enum.values.map((value) => [value.name, value.number]),
-              ),
+              values: Object.fromEntries(item.enum.values.map((value) => [value.name, value.number])),
             }
           : {}),
-        ...(item.fieldKind === "list" && item.listKind === "message"
-          ? { message: item.message.name }
-          : {}),
+        ...(item.fieldKind === "list" && item.listKind === "message" ? { message: item.message.name } : {}),
         optional: item.proto.proto3Optional,
         ...(item.oneof === undefined ? {} : { oneof: item.oneof.name }),
         rules: toJson(FieldRulesSchema, getOption(item, field)),
@@ -48,9 +44,7 @@ const output = `${JSON.stringify(schema, null, 2)}\n`;
 const target = new URL("../copydesk_schema.json", import.meta.url);
 if (process.argv.includes("--check")) {
   if ((await readFile(target, "utf8")) !== output)
-    throw new Error(
-      "Neovim schema is stale: bun acceptance/generate-editor-schema.ts",
-    );
+    throw new Error("Neovim schema is stale: bun acceptance/generate-editor-schema.ts");
 } else {
   await writeFile(target, output);
 }

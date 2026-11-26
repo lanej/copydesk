@@ -34,37 +34,23 @@ function array(value: unknown): unknown[] {
   return value;
 }
 async function read(name: string): Promise<Record<string, unknown>> {
-  const value: unknown = JSON.parse(
-    await readFile(new URL(`./fixtures/${name}`, import.meta.url), "utf8"),
-  );
+  const value: unknown = JSON.parse(await readFile(new URL(`./fixtures/${name}`, import.meta.url), "utf8"));
   return object(value);
 }
-function validate(
-  type: unknown,
-  value: unknown,
-  expected: unknown = true,
-): void {
+function validate(type: unknown, value: unknown, expected: unknown = true): void {
   assert.ok(typeof type === "string");
   assert.equal(typeof expected, "boolean");
   const schema = schemas.get(type);
   assert.ok(schema !== undefined, `Missing fixture schema ${type}`);
-  const result = validator.validate(
-    schema,
-    fromJsonString(schema, JSON.stringify(value)),
-  );
-  assert.equal(
-    result.kind === "valid",
-    expected,
-    `Fixture ${type}: ${result.kind}`,
-  );
+  const result = validator.validate(schema, fromJsonString(schema, JSON.stringify(value)));
+  assert.equal(result.kind === "valid", expected, `Fixture ${type}: ${result.kind}`);
 }
 await test("frozen Connect examples and negative shared constraints validate against generated schemas", async () => {
   for (const name of ["register.json", "feedback.json"]) {
     const fixture = await read(name);
     validate(fixture["requestType"], fixture["request"]);
     validate(fixture["responseType"], fixture["response"]);
-    if (fixture["expectedValueType"] !== undefined)
-      validate(fixture["expectedValueType"], fixture["expectedValue"]);
+    if (fixture["expectedValueType"] !== undefined) validate(fixture["expectedValueType"], fixture["expectedValue"]);
   }
   for (const name of ["sync.json", "save.json"]) {
     const fixture = await read(name);
@@ -73,19 +59,14 @@ await test("frozen Connect examples and negative shared constraints validate aga
       validate(call["requestType"], call["request"]);
       validate(call["responseType"], call["response"]);
     }
-    if (fixture["expectedValueType"] !== undefined)
-      validate(fixture["expectedValueType"], fixture["expectedValue"]);
+    if (fixture["expectedValueType"] !== undefined) validate(fixture["expectedValueType"], fixture["expectedValue"]);
   }
   for (const raw of array((await read("invalid-values.json"))["cases"])) {
     const example = object(raw);
     validate(example["type"], example["value"], example["valid"]);
   }
   assert.throws(
-    () =>
-      fromJsonString(
-        wire.LineRangeSchema,
-        '{"startLine":1,"endLine":1,"futureMeaning":true}',
-      ),
+    () => fromJsonString(wire.LineRangeSchema, '{"startLine":1,"endLine":1,"futureMeaning":true}'),
     /unknown/,
   );
   const sequence = fromJsonString(

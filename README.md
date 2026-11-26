@@ -108,7 +108,7 @@ The launcher sets `COPYDESK_RUNTIME` and `COPYDESK_CONNECTION`, then loads `boot
 
 ```sh
 bun install --frozen-lockfile --ignore-scripts
-npm ci --prefix .typescript-quality --ignore-scripts
+bun install --cwd .typescript-quality --frozen-lockfile --ignore-scripts
 python3 scripts/check-source-code.py typescript
 bun run test:package
 python3 scripts/check-protobuf.py tools

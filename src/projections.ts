@@ -17,10 +17,7 @@ export class Projections {
     const key = documentKey(document.ref);
     let path = this.paths.get(key);
     if (path === undefined) {
-      path = join(
-        this.directory,
-        `${createHash("sha256").update(key).digest("hex")}.md`,
-      );
+      path = join(this.directory, `${createHash("sha256").update(key).digest("hex")}.md`);
       await this.replace(path, document.text);
       this.paths.set(key, path);
     }
@@ -32,16 +29,11 @@ export class Projections {
     else await this.view(document);
   }
   private async replace(path: string, text: string): Promise<void> {
-    if ((await realpath(dirname(path))) !== this.directory)
-      throw new Error("Projection directory changed");
+    if ((await realpath(dirname(path))) !== this.directory) throw new Error("Projection directory changed");
     try {
-      if ((await lstat(path)).isSymbolicLink())
-        throw new Error("Projection is a symbolic link");
+      if ((await lstat(path)).isSymbolicLink()) throw new Error("Projection is a symbolic link");
     } catch (error) {
-      if (
-        !(error instanceof Error && "code" in error && error.code === "ENOENT")
-      )
-        throw error;
+      if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
     }
     const temporary = `${path}.${randomUUID()}.tmp`;
     await writeFile(temporary, text, { mode: 0o600, flag: "wx" });

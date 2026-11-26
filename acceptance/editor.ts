@@ -7,11 +7,7 @@ import { join, resolve } from "node:path";
 import { create, clone, equals } from "@bufbuild/protobuf";
 import { createWorkspace } from "../src/index.js";
 import { FakeHostProvider } from "../src/testing.js";
-import type {
-  AttachmentState,
-  EditorLauncher,
-  LaunchRequest,
-} from "../src/host.js";
+import type { AttachmentState, EditorLauncher, LaunchRequest } from "../src/host.js";
 import {
   CallContextSchema,
   DocumentRefSchema,
@@ -26,9 +22,7 @@ import {
 
 const execute = promisify(execFile);
 const nvim = process.env["COPYDESK_NVIM"] ?? "nvim";
-const output = resolve(
-  process.env["COPYDESK_ACCEPTANCE_OUTPUT"] ?? "artifacts/editor",
-);
+const output = resolve(process.env["COPYDESK_ACCEPTANCE_OUTPUT"] ?? "artifacts/editor");
 const directory = await mkdtemp(join(tmpdir(), "ei-"));
 const rpc = join(directory, "nvim.sock");
 let processHandle: ChildProcess | undefined;
@@ -68,24 +62,12 @@ ${installedFixture}
 `,
 );
 async function lua(code: string): Promise<unknown> {
-  const expression =
-    `luaeval('vim.json.encode((function() ${code} end)())')`.replaceAll(
-      "\n",
-      " ",
-    );
-  const { stdout } = await execute(
-    nvim,
-    ["--server", rpc, "--remote-expr", expression],
-    { timeout: 8000 },
-  );
+  const expression = `luaeval('vim.json.encode((function() ${code} end)())')`.replaceAll("\n", " ");
+  const { stdout } = await execute(nvim, ["--server", rpc, "--remote-expr", expression], { timeout: 8000 });
   return JSON.parse(stdout.trim()) as unknown;
 }
 // Lua literals use JSON double quotes, so the enclosing Vim expression is stable.
-async function wait(
-  label: string,
-  check: () => Promise<boolean> | boolean,
-  timeout = 10000,
-): Promise<void> {
+async function wait(label: string, check: () => Promise<boolean> | boolean, timeout = 10000): Promise<void> {
   const until = Date.now() + timeout;
   let error: unknown;
   do {
@@ -105,34 +87,20 @@ async function wait(
         "return {notice=vim.g.editor_last_notice, revision=d and d.revision, incoming=d and d.incoming, save=d and d.save, saving=d and d.saving, modified=d and vim.bo[d.buffer].modified}",
     ),
   );
-  throw new Error(
-    `${label}: ${error instanceof Error ? error.message : "condition did not become true"}\n${stderr}`,
-  );
+  throw new Error(`${label}: ${error instanceof Error ? error.message : "condition did not become true"}\n${stderr}`);
 }
 async function capture(width: number, name: string): Promise<string> {
   const target = join(output, `${name}.txt`);
-  await execute(
-    nvim,
-    [
-      "--headless",
-      "-u",
-      "NONE",
-      "-i",
-      "NONE",
-      "-l",
-      resolve("acceptance/editor-capture.lua"),
-    ],
-    {
-      env: {
-        ...process.env,
-        COPYDESK_CAPTURE_SOCKET: rpc,
-        COPYDESK_CAPTURE_WIDTH: String(width),
-        COPYDESK_CAPTURE_HEIGHT: "20",
-        COPYDESK_CAPTURE_OUTPUT: target,
-      },
-      timeout: 10000,
+  await execute(nvim, ["--headless", "-u", "NONE", "-i", "NONE", "-l", resolve("acceptance/editor-capture.lua")], {
+    env: {
+      ...process.env,
+      COPYDESK_CAPTURE_SOCKET: rpc,
+      COPYDESK_CAPTURE_WIDTH: String(width),
+      COPYDESK_CAPTURE_HEIGHT: "20",
+      COPYDESK_CAPTURE_OUTPUT: target,
     },
-  );
+    timeout: 10000,
+  });
   return readFile(target, "utf8");
 }
 const state = 'local s = require("copydesk").inspect(); ';
@@ -164,13 +132,9 @@ const launcher: EditorLauncher = {
             XDG_STATE_HOME: join(directory, "state"),
             XDG_CACHE_HOME: join(directory, "cache"),
             COPYDESK_RUNTIME: legacyLauncher ? undefined : runtime,
-            COPYDESK_CONNECTION: legacyLauncher
-              ? undefined
-              : request.manifestPath,
+            COPYDESK_CONNECTION: legacyLauncher ? undefined : request.manifestPath,
             EDITOR_INTEROP_RUNTIME: legacyLauncher ? runtime : undefined,
-            EDITOR_INTEROP_CONNECTION: legacyLauncher
-              ? request.manifestPath
-              : undefined,
+            EDITOR_INTEROP_CONNECTION: legacyLauncher ? request.manifestPath : undefined,
           },
           stdio: ["ignore", "pipe", "pipe"],
         },
@@ -183,9 +147,7 @@ const launcher: EditorLauncher = {
   },
   inspect(): Promise<AttachmentState> {
     return Promise.resolve(
-      processHandle?.exitCode == null
-        ? { state: "open", attachmentId: rpc }
-        : { state: "closed" },
+      processHandle?.exitCode == null ? { state: "open", attachmentId: rpc } : { state: "closed" },
     );
   },
   async verifyRegistration(request: LaunchRequest, editor: EditorRegistration) {
@@ -240,15 +202,7 @@ let workspace = await createWorkspace({
 try {
   const wireReport = await execute(
     nvim,
-    [
-      "--headless",
-      "-u",
-      "NONE",
-      "-i",
-      "NONE",
-      "-l",
-      resolve("acceptance/editor-wire.lua"),
-    ],
+    ["--headless", "-u", "NONE", "-i", "NONE", "-l", resolve("acceptance/editor-wire.lua")],
     {
       env: {
         ...process.env,
@@ -258,17 +212,13 @@ try {
       timeout: 180000,
     },
   );
-  await writeFile(
-    join(output, "wire-report.log"),
-    wireReport.stdout + wireReport.stderr,
-  );
+  await writeFile(join(output, "wire-report.log"), wireReport.stdout + wireReport.stderr);
   await workspace.open();
   await wait(
     "ordinary init and initial complete snapshot",
     async () =>
       (await lua(
-        doc +
-          "return vim.g.editor_acceptance_init and d ~= nil and s.connected and vim.tbl_count(s.documents) == 2",
+        doc + "return vim.g.editor_acceptance_init and d ~= nil and s.connected and vim.tbl_count(s.documents) == 2",
       )) === true,
   );
   assert.equal(
@@ -288,9 +238,7 @@ try {
     "the effective comment mapping is buffer-local before the attach event returns",
   );
   assert.equal(
-    await lua(
-      doc + 'return vim.fn.maparg(",sr", "n", false, true).buffer == 1',
-    ),
+    await lua(doc + 'return vim.fn.maparg(",sr", "n", false, true).buffer == 1'),
     !installed,
     "Lazy opts can disable one default mapping",
   );
@@ -301,30 +249,21 @@ try {
     "",
     "ordinary buffers have no Copydesk mappings",
   );
-  assert.equal(
-    await lua(`return vim.fn.maparg("${installed ? ",sc" : ",cc"}", "x")`),
-    "",
-  );
-  await lua(
-    doc +
-      'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Unsaved 🦉 selected text."}); return true',
-  );
+  assert.equal(await lua(`return vim.fn.maparg("${installed ? ",sc" : ",cc"}", "x")`), "");
+  await lua(doc + 'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Unsaved 🦉 selected text."}); return true');
   const beforeCancel = provider.feedbackEffects;
   await lua(`vim.api.nvim_input("3G${commentKey}"); return true`);
   await wait(
     "current-line comment opens beside the source window",
     async () =>
-      (await lua(
-        'return vim.bo.buftype == "prompt" and vim.api.nvim_win_get_config(0).relative == "win"',
-      )) === true,
+      (await lua('return vim.bo.buftype == "prompt" and vim.api.nvim_win_get_config(0).relative == "win"')) === true,
   );
   await lua('vim.api.nvim_input("Draft to cancel<Esc>"); return true');
   await wait(
     "cancel restores the original buffer",
     async () =>
       (await lua(
-        doc +
-          "return vim.api.nvim_get_current_buf() == d.buffer and #vim.api.nvim_tabpage_list_wins(0) == 1",
+        doc + "return vim.api.nvim_get_current_buf() == d.buffer and #vim.api.nvim_tabpage_list_wins(0) == 1",
       )) === true,
   );
   assert.equal(provider.feedbackEffects, beforeCancel);
@@ -332,14 +271,9 @@ try {
   await lua(`vim.api.nvim_input("4GVk${commentKey}"); return true`);
   await wait(
     "selection comment enters the prompt",
-    async () =>
-      (await lua(
-        'return vim.bo.buftype == "prompt" and vim.fn.mode() == "i"',
-      )) === true,
+    async () => (await lua('return vim.bo.buftype == "prompt" and vim.fn.mode() == "i"')) === true,
   );
-  await lua(
-    'vim.api.nvim_input("Is this something we really want?"); return true',
-  );
+  await lua('vim.api.nvim_input("Is this something we really want?"); return true');
   assert.equal(
     await lua(
       'return vim.wo.winhighlight == "FloatBorder:EditorCommentBorder,FloatFooter:EditorCommentBorder" and vim.api.nvim_get_hl(0, {name = "EditorCommentBorder"}).fg == 0xb48ead',
@@ -348,43 +282,21 @@ try {
   );
   const composer = await capture(90, "feedback-composer");
   const composerRows = composer.split("\n");
-  const selectionEnd = composerRows.findIndex((line) =>
-    line.includes("Fourth line."),
-  );
-  const promptRow = composerRows.findIndex((line) =>
-    line.includes("Is this something we really want?"),
-  );
-  assert(
-    selectionEnd >= 0 &&
-      promptRow > selectionEnd &&
-      promptRow <= selectionEnd + 2,
-    composer,
-  );
+  const selectionEnd = composerRows.findIndex((line) => line.includes("Fourth line."));
+  const promptRow = composerRows.findIndex((line) => line.includes("Is this something we really want?"));
+  assert(selectionEnd >= 0 && promptRow > selectionEnd && promptRow <= selectionEnd + 2, composer);
   assert(!composer.includes("Editor comment:"), composer);
   assert(composer.includes("Esc cancel"), composer);
   await lua('vim.api.nvim_input("<CR>"); return true');
-  await wait(
-    "exact dirty selection admitted without saving",
-    () => provider.feedbackEffects === 1,
-  );
+  await wait("exact dirty selection admitted without saving", () => provider.feedbackEffects === 1);
   const queued = provider.feedback()[0];
   assert(queued?.request !== undefined);
-  assert.equal(
-    queued.request.selectedText,
-    "Unsaved 🦉 selected text.\nFourth line.",
-  );
+  assert.equal(queued.request.selectedText, "Unsaved 🦉 selected text.\nFourth line.");
   assert.equal(queued.request.message, "Is this something we really want?");
-  assert.deepEqual(
-    [queued.request.range?.startLine, queued.request.range?.endLine],
-    [3, 4],
-  );
+  assert.deepEqual([queued.request.range?.startLine, queued.request.range?.endLine], [3, 4]);
   assert.equal(queued.request.baseRevision, "revision-one");
   assert.equal(provider.saveEffects, 0);
-  assert.equal(
-    provider.documents().find((value) => value.ref?.documentId === "spec")
-      ?.text,
-    initial.text,
-  );
+  assert.equal(provider.documents().find((value) => value.ref?.documentId === "spec")?.text, initial.text);
   const answered = create(FeedbackRecordSchema, {
     ...queued,
     state: FeedbackState.ANSWERED,
@@ -406,14 +318,8 @@ try {
       releaseSave = done;
     });
   await lua('vim.cmd("write"); return true');
-  await wait(
-    "save reaches authoritative delay",
-    () => typeof releaseSave === "function",
-  );
-  await lua(
-    doc +
-      'vim.api.nvim_buf_set_lines(d.buffer, 3, 4, false, {"Later local edit."}); return true',
-  );
+  await wait("save reaches authoritative delay", () => typeof releaseSave === "function");
+  await lua(doc + 'vim.api.nvim_buf_set_lines(d.buffer, 3, 4, false, {"Later local edit."}); return true');
   releaseSave();
   await wait(
     "save acknowledgment preserves later local edit",
@@ -427,19 +333,13 @@ try {
   await lua('vim.cmd("write"); return true');
   await wait(
     "explicit second write saves newer text",
-    async () =>
-      (await lua(
-        doc + "return not d.saving and not vim.bo[d.buffer].modified",
-      )) === true,
+    async () => (await lua(doc + "return not d.saving and not vim.bo[d.buffer].modified")) === true,
   );
-  let current = provider
-    .documents()
-    .find((value) => value.ref?.documentId === "spec");
+  let current = provider.documents().find((value) => value.ref?.documentId === "spec");
   assert(current !== undefined);
   const clean = clone(DocumentSnapshotSchema, current);
   clean.revision = "clean-incoming";
-  clean.text =
-    "# Specification\n\nClean incoming 🦉 text.\nLater local edit.\n";
+  clean.text = "# Specification\n\nClean incoming 🦉 text.\nLater local edit.\n";
   await lua(doc + "vim.api.nvim_win_set_cursor(0, {4, 2}); return true");
   provider.seedDocument(clean);
   await wait(
@@ -450,14 +350,10 @@ try {
           'return d.revision == "clean-incoming" and vim.api.nvim_get_current_buf() == d.buffer and vim.api.nvim_win_get_cursor(0)[1] == 4 and vim.fn.undotree().seq_last > 0',
       )) === true,
   );
-  await lua(
-    doc +
-      'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Dirty local conflict."}); return true',
-  );
+  await lua(doc + 'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Dirty local conflict."}); return true');
   const incoming = clone(DocumentSnapshotSchema, clean);
   incoming.revision = "dirty-incoming";
-  incoming.text =
-    "# Specification\n\nRemote conflicting text.\nLater local edit.\n";
+  incoming.text = "# Specification\n\nRemote conflicting text.\nLater local edit.\n";
   provider.seedDocument(incoming);
   await wait(
     "dirty incoming held with visible conflict",
@@ -472,25 +368,16 @@ try {
   assert(narrow.includes("conflict") && narrow.includes("Answered"));
   const normal = await capture(100, "documents-normal");
   assert(normal.includes("conflict") && normal.includes("no document edits"));
-  assertions.push(
-    "actual narrow and normal UI grids retain conflict and outcome markers",
-  );
+  assertions.push("actual narrow and normal UI grids retain conflict and outcome markers");
   await lua('require("copydesk").resolve(); return true');
   assert.equal(await lua(doc + "return d.incoming ~= nil"), true);
-  await lua(
-    'require("copydesk").compare(); require("copydesk").resolve(); vim.cmd("write"); return true',
-  );
+  await lua('require("copydesk").compare(); require("copydesk").resolve(); vim.cmd("write"); return true');
   await wait(
     "explicit comparison reconciliation and write",
     async () =>
-      (await lua(
-        doc +
-          "return d.incoming == nil and not d.saving and not vim.bo[d.buffer].modified",
-      )) === true,
+      (await lua(doc + "return d.incoming == nil and not d.saving and not vim.bo[d.buffer].modified")) === true,
   );
-  current = provider
-    .documents()
-    .find((value) => value.ref?.documentId === "spec");
+  current = provider.documents().find((value) => value.ref?.documentId === "spec");
   assert(current !== undefined);
   const changed = create(FeedbackRecordSchema, {
     ...answered,
@@ -538,14 +425,10 @@ try {
   await lua('vim.cmd("write"); return true');
   await wait(
     "unconfirmed save retained",
-    async () =>
-      (await lua(doc + "return not d.saving and d.save ~= nil")) === true,
+    async () => (await lua(doc + "return not d.saving and d.save ~= nil")) === true,
   );
   const effects = provider.saveEffects;
-  await lua(
-    doc +
-      'vim.api.nvim_buf_set_lines(d.buffer, 3, 4, false, {"Newer than uncertain save."}); return true',
-  );
+  await lua(doc + 'vim.api.nvim_buf_set_lines(d.buffer, 3, 4, false, {"Newer than uncertain save."}); return true');
   releaseCommit();
   await workspace.dispose();
   provider.afterCommit = undefined;
@@ -577,11 +460,7 @@ try {
   await lua('vim.cmd("write"); return true');
   await wait(
     "explicit original operation reconciles after generation restart",
-    async () =>
-      (await lua(
-        doc +
-          "return not d.saving and d.save == nil and vim.bo[d.buffer].modified",
-      )) === true,
+    async () => (await lua(doc + "return not d.saving and d.save == nil and vim.bo[d.buffer].modified")) === true,
   );
   assert.equal(provider.saveEffects, effects);
   assert.equal(recoveryCommands.length, 2);
@@ -590,28 +469,21 @@ try {
   assert(originalCommand !== undefined && repeatedCommand !== undefined);
   assert(equals(SaveCommandSchema, originalCommand, repeatedCommand));
   assert.equal(
-    await lua(
-      doc + "return vim.api.nvim_buf_get_lines(d.buffer, 3, 4, false)[1]",
-    ),
+    await lua(doc + "return vim.api.nvim_buf_get_lines(d.buffer, 3, 4, false)[1]"),
     "Newer than uncertain save.",
   );
   provider.beforeSave = undefined;
   provider.setActiveOwner(undefined);
   await wait(
     "missing owner preserves edits and detaches membership",
-    async () =>
-      (await lua(doc + "return d.detached and vim.bo[d.buffer].modified")) ===
-      true,
+    async () => (await lua(doc + "return d.detached and vim.bo[d.buffer].modified")) === true,
   );
   await lua('vim.cmd("write"); return true');
   assert.equal(provider.saveEffects, effects);
   await workspace.dispose();
   await wait(
     "disconnect preserves buffers",
-    async () =>
-      (await lua(
-        doc + "return not s.connected and vim.bo[d.buffer].modified",
-      )) === true,
+    async () => (await lua(doc + "return not s.connected and vim.bo[d.buffer].modified")) === true,
   );
   provider.activate("activation-two");
   provider.setActiveOwner("owner-one");
@@ -641,9 +513,7 @@ try {
   await lua('require("copydesk").reconnect(); return true');
   await wait(
     "same activation reconnect is idempotent",
-    async () =>
-      (await lua(doc + "return s.connected and vim.bo[d.buffer].modified")) ===
-      true,
+    async () => (await lua(doc + "return s.connected and vim.bo[d.buffer].modified")) === true,
   );
   await lua(
     'local m = require("copydesk"); m.stop(); local c = vim.deepcopy(m.inspect().connection); c.context.session.conversationId = "foreign-conversation"; vim.g.foreign_reconnect_rejected = not pcall(m.attach, c); m.attach(); return true',
@@ -660,10 +530,7 @@ try {
     doc +
       "return { text = vim.api.nvim_buf_get_lines(d.buffer, 0, -1, false), status = vim.wo.winbar, marks = vim.api.nvim_buf_get_extmarks(d.buffer, vim.api.nvim_get_namespaces().EditorDocuments, 0, -1, {details = true}), init = vim.g.editor_acceptance_init }",
   );
-  await writeFile(
-    join(output, "native-state.json"),
-    JSON.stringify(evidence, null, 2),
-  );
+  await writeFile(join(output, "native-state.json"), JSON.stringify(evidence, null, 2));
   await writeFile(
     join(output, "report.json"),
     JSON.stringify(
@@ -676,9 +543,7 @@ try {
       2,
     ),
   );
-  console.log(
-    `Native editor acceptance passed (${String(assertions.length)} checkpoints)`,
-  );
+  console.log(`Native editor acceptance passed (${String(assertions.length)} checkpoints)`);
 } finally {
   await workspace.dispose();
   if (processHandle !== undefined && processHandle.exitCode == null) {

@@ -12,10 +12,7 @@ import type {
 /** Only for confirmed pre-effect failures; ambiguous outcomes require retained evidence. */
 export class ProviderError extends Error {
   constructor(
-    readonly code:
-      | "invalid_argument"
-      | "failed_precondition"
-      | "already_exists",
+    readonly code: "invalid_argument" | "failed_precondition" | "already_exists",
     message: string,
   ) {
     super(message);
@@ -23,9 +20,7 @@ export class ProviderError extends Error {
   }
 }
 
-export type SnapshotItem =
-  | { kind: "document"; value: DocumentSnapshot }
-  | { kind: "feedback"; value: FeedbackRecord };
+export type SnapshotItem = { kind: "document"; value: DocumentSnapshot } | { kind: "feedback"; value: FeedbackRecord };
 
 /** One immutable logical read view; close releases its storage snapshot. */
 export interface SnapshotReader {
@@ -40,10 +35,7 @@ export interface HostProvider {
   /** Atomically commit candidate + operation witness, or return rejected/uncertain. */
   save(call: CallContext, command: SaveCommand): Promise<SaveResult>;
   /** Persist exact request before admission; preserve terminal outcomes across generations. */
-  submitFeedback(
-    call: CallContext,
-    command: FeedbackCommand,
-  ): Promise<FeedbackRecord>;
+  submitFeedback(call: CallContext, command: FeedbackCommand): Promise<FeedbackRecord>;
   onChanged(listener: () => void): () => void;
 }
 

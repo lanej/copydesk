@@ -1,18 +1,7 @@
-import {
-  createHash,
-  createHmac,
-  randomBytes,
-  randomUUID,
-  timingSafeEqual,
-} from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, open, rm } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  clone,
-  create,
-  type DescMessage,
-  type MessageShape,
-} from "@bufbuild/protobuf";
+import { clone, create, type DescMessage, type MessageShape } from "@bufbuild/protobuf";
 import { Code, ConnectError } from "@connectrpc/connect";
 import {
   CallContextSchema,
@@ -28,14 +17,7 @@ import {
   type SyncResponse,
 } from "./generated/editorinterop/v1/editor_interop_pb.js";
 import type { HostProvider, SnapshotReader } from "./host.js";
-import {
-  checked,
-  CHUNK_BYTES,
-  CURSOR_IDLE_MS,
-  documentKey,
-  required,
-  sameSession,
-} from "./model.js";
+import { checked, CHUNK_BYTES, CURSOR_IDLE_MS, documentKey, required, sameSession } from "./model.js";
 import type { Projections } from "./projections.js";
 import { ChunkSource } from "./chunks.js";
 
@@ -78,16 +60,10 @@ export class SnapshotTransfer {
     private readonly now: () => number = Date.now,
   ) {}
   async call(cursor: string): Promise<SyncResponse> {
-    if (
-      this.state !== undefined &&
-      this.now() - this.state.touched >= CURSOR_IDLE_MS
-    )
-      await this.close();
+    if (this.state && this.now() - this.state.touched >= CURSOR_IDLE_MS) await this.close();
     if (cursor === "") {
       await this.close();
-      const reader = await this.provider.openSnapshot(
-        clone(CallContextSchema, this.context),
-      );
+      const reader = await this.provider.openSnapshot(clone(CallContextSchema, this.context));
       try {
         checked(SyncHeaderSchema, reader.header);
         if (!sameSession(reader.header.session, this.context.session))
@@ -119,14 +95,14 @@ export class SnapshotTransfer {
       }
     }
     const state = this.state;
-    if (state === undefined) return missing();
+    if (!state) return missing();
     const replay = state.replay.get(cursor);
-    if (replay !== undefined) return replay;
+    if (replay) return replay;
     if (cursor !== state.next || state.complete) return missing();
     try {
-      if (state.source === undefined) {
+      if (!state.source) {
         const item = await state.reader.next();
-        if (item === undefined) {
+        if (!item) {
           state.complete = true;
           state.next = "";
           state.touched = this.now();
@@ -152,10 +128,7 @@ export class SnapshotTransfer {
         if (item.kind === "document") {
           checked(DocumentSnapshotSchema, item.value);
           const ref = required(item.value.ref, "document ref");
-          if (
-            !sameSession(ref.session, this.context.session) ||
-            ref.ownerId !== state.reader.header.activeOwnerId
-          )
+          if (!sameSession(ref.session, this.context.session) || ref.ownerId !== state.reader.header.activeOwnerId)
             throw new ConnectError("Foreign snapshot document", Code.Internal);
           identity = `document:${documentKey(ref)}`;
           state.source = await ChunkSource.create(
@@ -180,10 +153,7 @@ export class SnapshotTransfer {
           state.feedback++;
         }
         // Duplicate detection lives on disk so a long receipt history does not grow a memory set.
-        const marker = join(
-          state.directory,
-          `${createHash("sha256").update(identity).digest("hex")}.seen`,
-        );
+        const marker = join(state.directory, `${createHash("sha256").update(identity).digest("hex")}.seen`);
         const file = await open(marker, "wx", 0o600);
         await file.close();
       }
@@ -207,16 +177,12 @@ export class SnapshotTransfer {
     }
   }
   async sweep(): Promise<void> {
-    if (
-      this.state !== undefined &&
-      this.now() - this.state.touched >= CURSOR_IDLE_MS
-    )
-      await this.close();
+    if (this.state && this.now() - this.state.touched >= CURSOR_IDLE_MS) await this.close();
   }
   async close(): Promise<void> {
     const state = this.state;
     this.state = undefined;
-    if (state === undefined) return;
+    if (!state) return;
     await state.source?.close();
     if (!state.complete) await state.reader.close();
     await rm(state.directory, { recursive: true, force: true });
@@ -233,31 +199,18 @@ interface ResultTransfer extends CursorState<ResultResponse> {
 
 function operationCursor(state: ResultTransfer, offset: number): string {
   const payload = `${state.cursorIdentity}:${String(offset)}`;
-  const signature = createHmac("sha256", state.cursorSecret)
-    .update(payload)
-    .digest("hex");
+  const signature = createHmac("sha256", state.cursorSecret).update(payload).digest("hex");
   return `${payload}:${signature}`;
 }
-function operationOffset(
-  state: ResultTransfer,
-  cursor: string,
-): number | undefined {
+function operationOffset(state: ResultTransfer, cursor: string): number | undefined {
   const [identity, encodedOffset] = cursor.split(":");
-  if (identity !== state.cursorIdentity || encodedOffset === undefined)
-    return undefined;
+  if (identity !== state.cursorIdentity || encodedOffset === undefined) return undefined;
   const offset = Number(encodedOffset);
-  if (
-    !Number.isSafeInteger(offset) ||
-    offset < CHUNK_BYTES ||
-    offset > state.position ||
-    offset % CHUNK_BYTES !== 0
-  )
+  if (!Number.isSafeInteger(offset) || offset < CHUNK_BYTES || offset > state.position || offset % CHUNK_BYTES !== 0)
     return undefined;
   const actual = Buffer.from(cursor);
   const expected = Buffer.from(operationCursor(state, offset));
-  return actual.length === expected.length && timingSafeEqual(actual, expected)
-    ? offset
-    : undefined;
+  return actual.length === expected.length && timingSafeEqual(actual, expected) ? offset : undefined;
 }
 
 /** Serialized caller: four unfinished values plus 64 reserved/completed replay slots. */
@@ -278,17 +231,11 @@ export class OperationTransfers {
     const previous = this.entries.get(key);
     // An exact repeat is a read of the retained result, including after progress.
     // It cannot revoke another in-flight continuation or invoke the provider again.
-    if (previous?.first !== undefined) return previous.first;
+    if (previous?.first) return previous.first;
     if (this.entries.size >= 4)
-      throw new ConnectError(
-        "Operation result slots are full; retain the candidate",
-        Code.ResourceExhausted,
-      );
+      throw new ConnectError("Operation result slots are full; retain the candidate", Code.ResourceExhausted);
     if (this.entries.size + this.completed.size >= 64)
-      throw new ConnectError(
-        "Operation replay capacity is full; retain the candidate",
-        Code.ResourceExhausted,
-      );
+      throw new ConnectError("Operation replay capacity is full; retain the candidate", Code.ResourceExhausted);
     const state: ResultTransfer = {
       next: "",
       replay: new Map(),
@@ -299,18 +246,11 @@ export class OperationTransfers {
     };
     this.entries.set(key, state);
     try {
-      state.source = await ChunkSource.create(
-        this.directory,
-        kind,
-        schema,
-        await produce(),
-      );
+      state.source = await ChunkSource.create(this.directory, kind, schema, await produce());
       const value = await state.source.next();
       if (value.valueComplete) delete state.source;
       state.position = value.data.length;
-      state.next = value.valueComplete
-        ? ""
-        : operationCursor(state, state.position);
+      state.next = value.valueComplete ? "" : operationCursor(state, state.position);
       state.touched = this.now();
       state.first = create(ResultResponseSchema, {
         value,
@@ -329,20 +269,18 @@ export class OperationTransfers {
     await this.sweep();
     for (const state of this.completed.values()) {
       const replay = state.replay.get(cursor);
-      if (replay !== undefined) return replay;
+      if (replay) return replay;
     }
     for (const [key, state] of this.entries) {
       const replay = state.replay.get(cursor);
-      if (replay !== undefined) return replay;
+      if (replay) return replay;
       const offset = operationOffset(state, cursor);
-      if (offset === undefined || state.source === undefined) continue;
+      if (offset === undefined || !state.source) continue;
       const value = await state.source.readAt(offset);
       const nextOffset = offset + value.data.length;
       const response = create(ResultResponseSchema, {
         value,
-        nextCursor: value.valueComplete
-          ? ""
-          : operationCursor(state, nextOffset),
+        nextCursor: value.valueComplete ? "" : operationCursor(state, nextOffset),
       });
       // A discarded client stage can be rebuilt from disk, without replacing the
       // current cursor/cache or extending the lease for historical page replay.
