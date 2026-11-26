@@ -251,10 +251,10 @@ try {
   const beforeCancel = provider.feedbackEffects;
   await lua('vim.api.nvim_input("3G,sc"); return true');
   await wait(
-    "current-line comment opens in a normal split",
+    "current-line comment opens beside the source window",
     async () =>
       (await lua(
-        'return vim.bo.buftype == "prompt" and vim.api.nvim_win_get_config(0).relative == ""',
+        'return vim.bo.buftype == "prompt" and vim.api.nvim_win_get_config(0).relative == "win"',
       )) === true,
   );
   await lua('vim.api.nvim_input("Draft to cancel<Esc>"); return true');
@@ -285,20 +285,16 @@ try {
     line.includes("Fourth line."),
   );
   const promptRow = composerRows.findIndex((line) =>
-    line.includes("Editor comment: [3–4] Is this something we really want?"),
+    line.includes("Is this something we really want?"),
   );
   assert(
     selectionEnd >= 0 &&
       promptRow > selectionEnd &&
-      promptRow <= selectionEnd + 3,
+      promptRow <= selectionEnd + 2,
     composer,
   );
-  assert(
-    composerRows.findIndex((line) =>
-      line.includes("Unselected context below."),
-    ) > promptRow,
-    composer,
-  );
+  assert(composer.includes("Editor comment: lines 3–4"), composer);
+  assert(composer.includes("Esc cancel"), composer);
   await lua('vim.api.nvim_input("<CR>"); return true');
   await wait(
     "exact dirty selection admitted without saving",

@@ -9,21 +9,55 @@ function M.cancel()
 	end
 end
 
+local function placement(source, buffer, first, last)
+	local cursor = api.nvim_win_get_cursor(source)
+	local origin = vim.fn.win_screenpos(source)
+	local tail = api.nvim_buf_get_lines(buffer, last - 1, last, false)[1] or ""
+	local ending = vim.fn.screenpos(source, last, #tail + 1)
+	local starting = vim.fn.screenpos(source, first, first == last and cursor[2] + 1 or 1)
+	if ending.row == 0 then
+		ending = vim.fn.screenpos(source, cursor[1], cursor[2] + 1)
+	end
+	if starting.row == 0 then
+		starting = ending
+	end
+
+	local available = api.nvim_win_get_width(source)
+	local width = math.max(1, math.min(58, available - 2))
+	local col = math.max(0, math.min(starting.col - origin[2], available - width - 2))
+	local bottom = vim.o.lines - vim.o.cmdheight
+	local above = ending.row + 3 > bottom and starting.row > 3
+	local top = origin[1] + ((vim.wo[source].winbar ~= "" or vim.go.winbar ~= "") and 1 or 0)
+	local row = above and starting.row - top or math.max(1, ending.row - top + 1)
+	return {
+		relative = "win",
+		win = source,
+		anchor = above and "SW" or "NW",
+		row = row,
+		col = col,
+		width = width,
+		height = 1,
+		border = "rounded",
+		title = width >= 30
+				and (first == last and (" Editor comment: line %d "):format(first) or (" Editor comment: lines %d–%d "):format(
+					first,
+					last
+				))
+			or " Comment ",
+		footer = width >= 26 and " Enter send  ·  Esc cancel " or nil,
+		footer_pos = "right",
+		noautocmd = true,
+		style = "minimal",
+	}
+end
+
 function M.open(buffer, first, last, submit)
 	if cancel_active then
 		return
 	end
 	local source = api.nvim_get_current_win()
-	local view = vim.fn.winsaveview()
-	local restore_sizes = vim.fn.winrestcmd()
-	local tab = api.nvim_get_current_tabpage()
-	local layout = vim.fn.winlayout()
-	local rows = api.nvim_win_get_height(source)
-	local scrolloff = vim.wo[source].scrolloff
-	local focus_disabled = vim.w[source].focus_disable
-	local minimum = math.max(1, vim.o.winminheight)
-	local prompt_buffer = api.nvim_create_buf(false, true)
-	local prompt, continuation, mark, group
+	local input = api.nvim_create_buf(false, true)
+	local prompt, mark, group
 	local settled = false
 	local function finish(value)
 		if settled then
@@ -35,32 +69,14 @@ function M.open(buffer, first, last, submit)
 			if group then
 				api.nvim_del_augroup_by_id(group)
 			end
-			local focused = api.nvim_get_current_win()
-			if api.nvim_win_is_valid(source) then
-				vim.wo[source].scrolloff = scrolloff
-				vim.w[source].focus_disable = focus_disabled
+			if prompt and api.nvim_win_is_valid(prompt) then
+				api.nvim_win_close(prompt, true)
 			end
-			for _, window in ipairs({ continuation or 0, prompt or 0 }) do
-				if window ~= 0 and api.nvim_win_is_valid(window) then
-					api.nvim_win_close(window, true)
-				end
-			end
-			if api.nvim_buf_is_valid(prompt_buffer) then
-				api.nvim_buf_delete(prompt_buffer, { force = true })
+			if api.nvim_buf_is_valid(input) then
+				api.nvim_buf_delete(input, { force = true })
 			end
 			if mark and api.nvim_buf_is_valid(buffer) then
 				api.nvim_buf_del_extmark(buffer, highlight, mark)
-			end
-			if api.nvim_win_is_valid(source) and api.nvim_win_get_buf(source) == buffer then
-				if focused == prompt or focused == continuation then
-					api.nvim_set_current_win(source)
-				end
-				if api.nvim_get_current_tabpage() == tab and vim.deep_equal(vim.fn.winlayout(), layout) then
-					vim.cmd(restore_sizes)
-				end
-				api.nvim_win_call(source, function()
-					vim.fn.winrestview(view)
-				end)
 			end
 			if value then
 				submit(value)
@@ -69,57 +85,19 @@ function M.open(buffer, first, last, submit)
 	end
 	cancel_active = finish
 
-	local label = first == last and ("Editor comment: [%d] "):format(first)
-		or ("Editor comment: [%d–%d] "):format(first, last)
-	vim.bo[prompt_buffer].buftype = "prompt"
-	vim.bo[prompt_buffer].bufhidden = "wipe"
-	-- Keep the input row fixed when a window auto-resizer is installed.
-	vim.b[prompt_buffer].focus_disable = true
-	vim.fn.prompt_setprompt(prompt_buffer, label)
-	vim.fn.prompt_setcallback(prompt_buffer, finish)
-	vim.fn.prompt_setinterrupt(prompt_buffer, finish)
+	vim.bo[input].buftype, vim.bo[input].bufhidden = "prompt", "wipe"
+	vim.fn.prompt_setprompt(input, " › ")
+	vim.fn.prompt_setcallback(input, finish)
+	vim.fn.prompt_setinterrupt(input, finish)
 	vim.keymap.set({ "i", "n" }, "<Esc>", function()
 		finish()
-	end, { buffer = prompt_buffer, nowait = true })
+	end, { buffer = input, nowait = true })
 
 	local opened, failure = pcall(function()
-		vim.w[source].focus_disable = true
-		local visible_top = math.min(view.topline, last)
-		local anchor_rows = api.nvim_win_text_height(source, {
-			start_row = visible_top - 1,
-			end_row = last - 1,
-		}).all
-		local source_rows = math.max(minimum, math.min(anchor_rows, rows - minimum - 2))
-		if last < api.nvim_buf_line_count(buffer) and rows - source_rows >= 2 * minimum + 3 then
-			-- A second view keeps the document below the input visible without copying its text.
-			continuation = api.nvim_open_win(buffer, false, {
-				split = "below",
-				win = source,
-				height = rows - source_rows - 1,
-				noautocmd = true,
-			})
-			vim.w[continuation].focus_disable = true
-			vim.wo[continuation].winbar = vim.go.winbar ~= "" and " " or ""
-		end
-		prompt = api.nvim_open_win(prompt_buffer, false, {
-			split = continuation and "above" or "below",
-			win = continuation or source,
-			height = continuation and minimum or rows - source_rows - 1,
-			noautocmd = true,
-		})
-		vim.w[prompt].focus_disable = true
-		vim.wo[prompt].winbar = vim.go.winbar ~= "" and " " or ""
-		vim.wo[prompt].number, vim.wo[prompt].relativenumber = false, false
-		vim.wo[prompt].signcolumn, vim.wo[prompt].foldcolumn, vim.wo[prompt].statuscolumn = "no", "0", ""
-		vim.wo[prompt].wrap = false
-		vim.wo[source].scrolloff = 0
-		if continuation then
-			vim.wo[prompt].winfixheight = true
-			vim.wo[continuation].scrolloff = 0
-		end
-		api.nvim_win_call(source, function()
-			vim.fn.winrestview(vim.tbl_extend("force", view, { topline = visible_top, lnum = last, col = 0 }))
-		end)
+		vim.cmd.redraw()
+		prompt = api.nvim_open_win(input, true, placement(source, buffer, first, last))
+		vim.wo[prompt].wrap, vim.wo[prompt].sidescrolloff = false, 0
+		vim.wo[prompt].winhighlight = "FloatBorder:DiagnosticInfo,FloatTitle:Title,FloatFooter:DiagnosticInfo"
 		mark = api.nvim_buf_set_extmark(buffer, highlight, first - 1, 0, {
 			end_row = last,
 			end_col = 0,
@@ -129,18 +107,11 @@ function M.open(buffer, first, last, submit)
 		group = api.nvim_create_augroup("EditorCommentPrompt", { clear = true })
 		api.nvim_create_autocmd("BufLeave", {
 			group = group,
-			buffer = prompt_buffer,
+			buffer = input,
 			callback = function()
 				finish()
 			end,
 		})
-		api.nvim_set_current_win(prompt)
-		if continuation then
-			api.nvim_win_set_height(prompt, math.max(1, vim.o.winminheight))
-			api.nvim_win_call(continuation, function()
-				vim.fn.winrestview({ topline = last + 1, lnum = last + 1, col = 0, skipcol = 0 })
-			end)
-		end
 		vim.cmd.startinsert()
 	end)
 	if not opened then
