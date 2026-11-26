@@ -39,7 +39,7 @@ await mkdir(output, { recursive: true });
 await mkdir(join(directory, "config/nvim"), { recursive: true });
 await writeFile(
   join(directory, "config/nvim/init.lua"),
-  `vim.g.editor_acceptance_init = true\nvim.g.maplocalleader = ','\nvim.o.winbar = 'User window'\nvim.notify = function(message) vim.g.editor_last_notice = message end\n`,
+  `vim.g.editor_acceptance_init = true\nvim.g.maplocalleader = ','\nvim.o.winbar = 'User window'\nvim.api.nvim_create_user_command('EditorCommentary', function() end, {})\nvim.notify = function(message) vim.g.editor_last_notice = message end\n`,
 );
 async function lua(code: string): Promise<unknown> {
   const expression =

@@ -849,7 +849,7 @@ end
 local function command(suffix, callback, options)
 	vim.api.nvim_create_user_command("Copydesk" .. suffix, callback, options)
 	local legacy = "Editor" .. suffix
-	if vim.fn.exists(":" .. legacy) == 0 then
+	if vim.fn.exists(":" .. legacy) ~= 2 then
 		vim.api.nvim_create_user_command(legacy, callback, options)
 	end
 end
