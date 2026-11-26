@@ -19,14 +19,33 @@ enabled = true
 
 The first ready specification or plan opens in a centered floating pane, using your normal Neovim configuration. Studio keeps keyboard focus. Switch to the pane to edit. Later updates reuse it. If you close it, use `/documents` in Studio to reopen it. [Studio setup guide](https://github.com/lanej/studio/blob/main/docs/neovim-documents.md)
 
-### Edit, comment, and review
+### Configure Neovim
 
-1. **Open a draft.** Use `:CopydeskDocuments` to choose the full specification or plan.
-2. **Save an edit.** Edit the Markdown buffer and run `:write`. Studio validates the draft and accepts it against the revision you opened. Freezing the specification and approving the plan remain separate Studio actions.
-3. **Ask about a passage.** Select lines and run `:'<,'>CopydeskComment`, or use `<localleader>sc`. With no selection the command attaches the current line. The prompt opens beside the text. Enter sends the comment with the exact selected text, including unsaved edits. Escape cancels. The full reply stays in Studio chat.
-4. **See the outcome.** Use `:CopydeskResponses` for short outcomes and `:CopydeskChanges` to jump to resulting edits when their locations still match. An answer can also explain a decision without changing the document.
+Copydesk exposes actions through `require("copydesk")`. Put mappings in your Neovim configuration. The `User CopydeskAttach` event fires for each initialized document buffer and provides its buffer number in `event.data.buf`. Register the autocmd at startup and require Copydesk inside its callback, where the runtime is available.
 
-Clean buffers follow accepted Studio revisions. If you have unsaved edits, Copydesk holds the incoming revision for comparison. Use `:CopydeskCompare`, merge the text you want into your buffer, then run `:CopydeskResolve` and `:write`. Use `:CopydeskReload!` only when you want to discard local edits. If the connection drops, the draft stays in Neovim on a normal Studio quit. `:CopydeskReconnect` attempts to reconnect to the same document source when it is available. [Recovery behavior](docs/architecture.md)
+```lua
+vim.api.nvim_create_autocmd("User", {
+  pattern = "CopydeskAttach",
+  callback = function(event)
+    local copydesk = require("copydesk")
+    local opts = { buffer = event.data.buf }
+    vim.keymap.set("n", "<localleader>sc", copydesk.comment, opts)
+    vim.keymap.set("x", "<localleader>sc", copydesk.comment_selection, opts)
+    vim.keymap.set("n", "<localleader>ss", copydesk.documents, opts)
+  end,
+})
+```
+
+| Lua action | Behavior |
+| --- | --- |
+| `documents()` | Choose a bound specification or plan. |
+| `comment()` / `comment_selection()` | Prompt for a comment on the current line or the lines in the active Visual selection. |
+| `responses()` / `changes()` | Inspect a short outcome or jump to its changes if the location still matches. |
+| `compare()` / `resolve()` | Compare an incoming revision and adopt it as the base after merging locally. |
+| `reload(true)` | Discard local edits and restore the incoming revision if present, otherwise the last known revision. Reconcile any pending save first. |
+| `reconnect()` | Reconnect to the same document source when it is available. |
+
+Use Neovim's `:write` to submit a revision-checked edit. Clean buffers follow changes from Studio. If a revision conflicts with unsaved text, compare it, merge locally, resolve it, then write again. Freezing and approval remain explicit Studio actions. The comment prompt sends the exact text, including unsaved edits, to the owning conversation. Enter sends and Escape cancels. The full response stays in Studio chat. [Recovery behavior](docs/architecture.md)
 
 ## Integrate another host
 
@@ -66,7 +85,7 @@ The launcher sets `COPYDESK_RUNTIME` and `COPYDESK_CONNECTION`, then loads `boot
 ## Upgrade from Editor Interop
 
 - **Package.** Change the dependency key and import paths from `@lanej/editor-interop` to `@lanej/copydesk`, update the Git source and pin, and regenerate the consumer lockfile. The `/protocol`, `/neovim`, and `/testing` exports are unchanged. Use the Git transport shown above during the repository move. A Bun GitHub shorthand pin checks the archive checksum, which can change when the repository is renamed even at the same commit. If you maintain an older frozen checkout, update its dependency source and lockfile before reinstalling.
-- **Neovim.** Migrate mappings to the `:Copydesk…` commands. Existing `:Editor…` aliases and the `require("editor_interop")` entry point still work. Existing highlight groups and buffer metadata retain their names for user themes and integrations.
+- **Neovim.** Replace mappings for old Ex commands with Lua callbacks configured on `CopydeskAttach`. The `require("editor_interop")` Lua entry point and the highlight and buffer metadata names remain available for existing integrations.
 - **Launchers.** Use the `COPYDESK_*` variables. The bootstrap accepts `EDITOR_INTEROP_RUNTIME` and `EDITOR_INTEROP_CONNECTION` as fallbacks. The `editorinterop.v1.EditorInteropService` wire name and persisted manifest and document paths are unchanged.
 
 ## Verify a change
