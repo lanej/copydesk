@@ -66,7 +66,7 @@ The launcher sets `COPYDESK_RUNTIME` and `COPYDESK_CONNECTION`, then loads `boot
 ## Upgrade from Editor Interop
 
 - **Package.** Change the dependency key and import paths from `@lanej/editor-interop` to `@lanej/copydesk`, update the Git source and pin, and regenerate the consumer lockfile. The `/protocol`, `/neovim`, and `/testing` exports are unchanged. Use the Git transport shown above during the repository move. A Bun GitHub shorthand pin checks the archive checksum, which can change when the repository is renamed even at the same commit. If you maintain an older frozen checkout, update its dependency source and lockfile before reinstalling.
-- **Neovim.** Migrate mappings to the `:Copydesk…` commands. Existing `:Editor…` aliases and the `require("editor_interop")` entry point still work. Existing highlight groups and buffer metadata retain their names for user themes and integrations.
+- **Neovim.** Replace `:Editor…` in your mappings with `:Copydesk…`. Copydesk only registers the new command names. The Lua entry point `require("editor_interop")` still works. Existing highlight groups and buffer metadata retain their names for user themes and integrations.
 - **Launchers.** Use the `COPYDESK_*` variables. The bootstrap accepts `EDITOR_INTEROP_RUNTIME` and `EDITOR_INTEROP_CONNECTION` as fallbacks. The `editorinterop.v1.EditorInteropService` wire name and persisted manifest and document paths are unchanged.
 
 ## Verify a change

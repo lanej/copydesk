@@ -846,14 +846,6 @@ function M.stop()
 	end
 end
 
-local function command(suffix, callback, options)
-	vim.api.nvim_create_user_command("Copydesk" .. suffix, callback, options)
-	local legacy = "Editor" .. suffix
-	if vim.fn.exists(":" .. legacy) ~= 2 then
-		vim.api.nvim_create_user_command(legacy, callback, options)
-	end
-end
-
 function M.setup(connection)
 	if not state.stopped then
 		return
@@ -888,7 +880,7 @@ function M.setup(connection)
 	vim.api.nvim_set_hl(0, "EditorDocumentStatus", { link = "Comment", default = true })
 	vim.api.nvim_set_hl(0, "EditorDocumentPending", { link = "DiagnosticWarn", default = true })
 	vim.api.nvim_set_hl(0, "EditorDocumentAnswer", { link = "DiagnosticInfo", default = true })
-	command("Documents", function()
+	vim.api.nvim_create_user_command("CopydeskDocuments", function()
 		vim.ui.select(document_list(), {
 			prompt = "Copydesk documents",
 			format_item = function(document)
@@ -906,10 +898,10 @@ function M.setup(connection)
 			end
 		end)
 	end, {})
-	command("Comment", function(options)
+	vim.api.nvim_create_user_command("CopydeskComment", function(options)
 		M.comment(options.line1, options.line2)
 	end, { range = true })
-	command("Responses", function()
+	vim.api.nvim_create_user_command("CopydeskResponses", function()
 		choose_feedback(function(feedback)
 			if not feedback then
 				return
@@ -927,12 +919,12 @@ function M.setup(connection)
 			)
 		end)
 	end, {})
-	command("Changes", function()
+	vim.api.nvim_create_user_command("CopydeskChanges", function()
 		choose_feedback(show_changes)
 	end, {})
-	command("Compare", M.compare, {})
-	command("Resolve", M.resolve, {})
-	command("Reload", function(options)
+	vim.api.nvim_create_user_command("CopydeskCompare", M.compare, {})
+	vim.api.nvim_create_user_command("CopydeskResolve", M.resolve, {})
+	vim.api.nvim_create_user_command("CopydeskReload", function(options)
 		M.reload(options.bang)
 	end, { bang = true })
 	local lifecycle = vim.api.nvim_create_augroup("EditorInteropConnection", { clear = true })
@@ -943,7 +935,7 @@ function M.setup(connection)
 			state.windows[tonumber(event.match)] = nil
 		end,
 	})
-	command("Reconnect", function()
+	vim.api.nvim_create_user_command("CopydeskReconnect", function()
 		M.stop()
 		M.setup()
 	end, {})

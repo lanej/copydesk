@@ -247,7 +247,7 @@ try {
   );
   assert.equal(
     await lua(
-      'return require("copydesk") == require("editor_interop") and vim.fn.exists(":CopydeskComment") == 2 and vim.fn.exists(":EditorComment") == 2',
+      'local commands = vim.api.nvim_get_commands({builtin = false}); for _, suffix in ipairs({"Documents", "Comment", "Responses", "Changes", "Compare", "Resolve", "Reload", "Reconnect"}) do if not commands["Copydesk" .. suffix] or commands["Editor" .. suffix] then return false end end; return commands.EditorCommentary ~= nil and require("copydesk") == require("editor_interop")',
     ),
     true,
   );
@@ -281,11 +281,7 @@ try {
   );
   assert.equal(provider.feedbackEffects, beforeCancel);
 
-  await lua(
-    legacyLauncher
-      ? 'vim.api.nvim_input("3GVj:EditorComment<CR>"); return true'
-      : 'vim.api.nvim_input("3GVj:CopydeskComment<CR>"); return true',
-  );
+  await lua('vim.api.nvim_input("3GVj:CopydeskComment<CR>"); return true');
   await wait(
     "selection comment enters the prompt",
     async () =>
