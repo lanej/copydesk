@@ -15,7 +15,7 @@ try {
   const archive = path.join(scratch, 'editor-interop.tgz');
   run('bun', ['pm', 'pack', '--filename', archive, '--ignore-scripts', '--quiet'], root);
   const members = run('tar', ['-tzf', archive], root).trim().split('\n');
-  for (const name of ['package/src/index.ts', 'package/src/host.ts', 'package/src/generated/editorinterop/v1/editor_interop_pb.ts', 'package/resources/nvim/bootstrap.lua', 'package/LICENSE.md', 'package/NOTICE.md']) assert.ok(members.includes(name), `Missing packaged resource: ${name}`);
+  for (const name of ['package/src/index.ts', 'package/src/host.ts', 'package/src/generated/editorinterop/v1/editor_interop_pb.ts', 'package/resources/nvim/bootstrap.lua', 'package/resources/nvim/lua/editor_interop_prompt.lua', 'package/LICENSE.md', 'package/NOTICE.md']) assert.ok(members.includes(name), `Missing packaged resource: ${name}`);
   assert.ok(!members.some((name) => /(?:^|\/)(?:node_modules|\.git|\.socrates|\.worktrees)(?:\/|$)/.test(name)), 'Package contains development state');
   const consumer = path.join(scratch, 'consumer');
   await mkdir(consumer);

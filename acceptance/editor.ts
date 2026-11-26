@@ -182,7 +182,7 @@ const initial = create(DocumentSnapshotSchema, {
   ref: { session: context.session, ownerId: "owner-one", documentId: "spec" },
   revision: "revision-one",
   title: "Specification",
-  text: "# Specification\n\nUnicode 🦉 café.\nFourth line.\n",
+  text: "# Specification\n\nUnicode 🦉 café.\nFourth line.\nUnselected context below.\n",
   writable: true,
 });
 assert(initial.ref !== undefined);
@@ -249,24 +249,67 @@ try {
       'vim.api.nvim_buf_set_lines(d.buffer, 2, 3, false, {"Unsaved 🦉 selected text."}); return true',
   );
   const beforeCancel = provider.feedbackEffects;
-  await lua(
-    'vim.ui.input = function(_, callback) callback(nil) end; require("editor_interop").comment(3, 3); return true',
+  await lua('vim.api.nvim_input("3G,sc"); return true');
+  await wait(
+    "current-line comment opens beside the source window",
+    async () =>
+      (await lua(
+        'return vim.bo.buftype == "prompt" and vim.api.nvim_win_get_config(0).relative == "win"',
+      )) === true,
+  );
+  await lua('vim.api.nvim_input("Draft to cancel<Esc>"); return true');
+  await wait(
+    "cancel restores the original buffer",
+    async () =>
+      (await lua(
+        doc +
+          "return vim.api.nvim_get_current_buf() == d.buffer and #vim.api.nvim_tabpage_list_wins(0) == 1",
+      )) === true,
   );
   assert.equal(provider.feedbackEffects, beforeCancel);
-  assertions.push("cancelled composer has no effect");
-  await lua(
-    'require("editor_interop").comment(3, 3, "Is this something we really want?"); return true',
+
+  await lua('vim.api.nvim_input("3GVj,sc"); return true');
+  await wait(
+    "selection comment enters the prompt",
+    async () =>
+      (await lua(
+        'return vim.bo.buftype == "prompt" and vim.fn.mode() == "i"',
+      )) === true,
   );
+  await lua(
+    'vim.api.nvim_input("Is this something we really want?"); return true',
+  );
+  const composer = await capture(90, "feedback-composer");
+  const composerRows = composer.split("\n");
+  const selectionEnd = composerRows.findIndex((line) =>
+    line.includes("Fourth line."),
+  );
+  const promptRow = composerRows.findIndex((line) =>
+    line.includes("Is this something we really want?"),
+  );
+  assert(
+    selectionEnd >= 0 &&
+      promptRow > selectionEnd &&
+      promptRow <= selectionEnd + 2,
+    composer,
+  );
+  assert(!composer.includes("Editor comment:"), composer);
+  assert(composer.includes("Esc cancel"), composer);
+  await lua('vim.api.nvim_input("<CR>"); return true');
   await wait(
     "exact dirty selection admitted without saving",
     () => provider.feedbackEffects === 1,
   );
   const queued = provider.feedback()[0];
   assert(queued?.request !== undefined);
-  assert.equal(queued.request.selectedText, "Unsaved 🦉 selected text.");
+  assert.equal(
+    queued.request.selectedText,
+    "Unsaved 🦉 selected text.\nFourth line.",
+  );
+  assert.equal(queued.request.message, "Is this something we really want?");
   assert.deepEqual(
     [queued.request.range?.startLine, queued.request.range?.endLine],
-    [3, 3],
+    [3, 4],
   );
   assert.equal(queued.request.baseRevision, "revision-one");
   assert.equal(provider.saveEffects, 0);
