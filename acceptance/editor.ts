@@ -296,6 +296,12 @@ try {
   await lua(
     'vim.api.nvim_input("Is this something we really want?"); return true',
   );
+  assert.equal(
+    await lua(
+      'return vim.wo.winhighlight == "FloatBorder:EditorCommentBorder,FloatFooter:EditorCommentBorder" and vim.api.nvim_get_hl(0, {name = "EditorCommentBorder"}).fg == 0xb48ead',
+    ),
+    true,
+  );
   const composer = await capture(90, "feedback-composer");
   const composerRows = composer.split("\n");
   const selectionEnd = composerRows.findIndex((line) =>

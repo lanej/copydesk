@@ -92,7 +92,7 @@ function M.open(buffer, first, last, submit)
 		prompt = api.nvim_open_win(input, true, placement(source, buffer, first, last))
 		vim.wo[prompt].wrap, vim.wo[prompt].sidescrolloff = false, 0
 		api.nvim_set_hl(0, "EditorCommentBorder", { default = true, fg = "#b48ead", ctermfg = 5 })
-		vim.wo[prompt].winhighlight = "FloatBorder:CopydeskCommentBorder,FloatFooter:CopydeskCommentBorder"
+		vim.wo[prompt].winhighlight = "FloatBorder:EditorCommentBorder,FloatFooter:EditorCommentBorder"
 		mark = api.nvim_buf_set_extmark(buffer, highlight, first - 1, 0, {
 			end_row = last,
 			end_col = 0,
