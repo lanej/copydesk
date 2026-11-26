@@ -116,7 +116,7 @@ local function status(document, compact)
 		return compact and "save unconfirmed" or "save unconfirmed — :write to reconcile"
 	end
 	if document.incoming then
-		return compact and "conflict" or "conflict — :CopydeskCompare"
+		return compact and "conflict" or "conflict — compare revisions"
 	end
 	if not document.writable then
 		return compact and "protected" or document.reason or "protected — reopen in host"
@@ -478,25 +478,15 @@ local function create_document(snapshot, projection_path)
 			render(document)
 		end,
 	})
-	vim.keymap.set(
-		{ "n", "x" },
-		"<localleader>sc",
-		":CopydeskComment<CR>",
-		{ buffer = buffer, desc = "Send Copydesk document comment" }
-	)
-	vim.keymap.set(
-		"n",
-		"<localleader>sr",
-		"<Cmd>CopydeskResponses<CR>",
-		{ buffer = buffer, desc = "Inspect Copydesk responses" }
-	)
-	vim.keymap.set(
-		"n",
-		"<localleader>sd",
-		"<Cmd>CopydeskChanges<CR>",
-		{ buffer = buffer, desc = "Jump to Copydesk changes" }
-	)
 	apply_snapshot(document, snapshot, true)
+	local attached, failure = pcall(vim.api.nvim_exec_autocmds, "User", {
+		pattern = "CopydeskAttach",
+		data = { buf = buffer },
+		modeline = false,
+	})
+	if not attached then
+		notify(tostring(failure), vim.log.levels.WARN)
+	end
 	if not state.opened then
 		state.opened = true
 		local current = vim.api.nvim_get_current_buf()
@@ -768,7 +758,7 @@ function M.compare()
 	vim.cmd("diffthis")
 	document.comparedRevision = incoming.revision
 	vim.api.nvim_set_current_win(local_window)
-	notify("Local edits left; incoming revision right. Merge locally, then :CopydeskResolve and :write")
+	notify("Local edits left; incoming revision right. Merge locally, resolve the conflict, then :write")
 end
 
 function M.resolve()
@@ -781,7 +771,7 @@ function M.resolve()
 		return
 	end
 	if document.comparedRevision ~= document.incoming.revision then
-		notify("Inspect this incoming revision with :CopydeskCompare first", vim.log.levels.WARN)
+		notify("Compare the incoming revision before resolving it", vim.log.levels.WARN)
 		return
 	end
 	document.revision, document.text = document.incoming.revision, document.incoming.text
@@ -804,7 +794,7 @@ function M.reload(force)
 		return
 	end
 	if not force then
-		notify("Use :CopydeskReload! to discard local edits, or :CopydeskCompare to merge", vim.log.levels.WARN)
+		notify("Compare and merge the incoming revision, or explicitly discard local edits to reload", vim.log.levels.WARN)
 		return
 	end
 	local snapshot = document.incoming
@@ -846,6 +836,63 @@ function M.stop()
 	end
 end
 
+function M.documents()
+	vim.ui.select(document_list(), {
+		prompt = "Copydesk documents",
+		format_item = function(document)
+			return document.title
+				.. " · "
+				.. vim.fn.fnamemodify(document.ref.session.projectId, ":t")
+				.. " · "
+				.. document.ref.ownerId:sub(1, 8)
+				.. " · "
+				.. status(document)
+		end,
+	}, function(document)
+		if document then
+			show_document(document)
+		end
+	end)
+end
+
+function M.responses()
+	choose_feedback(function(feedback)
+		if not feedback then
+			return
+		end
+		notify(
+			compact(
+				(feedback.summary ~= "" and feedback.summary)
+					or (feedback.reason ~= "" and feedback.reason)
+					or feedback_labels[feedback.state]
+					or feedback.state,
+				300
+			)
+				.. "\nOriginal selection: "
+				.. compact(feedback.selectedText, 140)
+		)
+	end)
+end
+
+function M.changes()
+	choose_feedback(show_changes)
+end
+
+function M.comment_selection()
+	local mode = vim.fn.mode()
+	if mode ~= "v" and mode ~= "V" and mode ~= "\22" then
+		return M.comment()
+	end
+	local anchor, cursor = vim.fn.line("v"), vim.fn.line(".")
+	vim.cmd.normal({ args = { "\27" }, bang = true })
+	return M.comment(math.min(anchor, cursor), math.max(anchor, cursor))
+end
+
+function M.reconnect()
+	M.stop()
+	M.setup()
+end
+
 function M.setup(connection)
 	if not state.stopped then
 		return
@@ -880,53 +927,6 @@ function M.setup(connection)
 	vim.api.nvim_set_hl(0, "EditorDocumentStatus", { link = "Comment", default = true })
 	vim.api.nvim_set_hl(0, "EditorDocumentPending", { link = "DiagnosticWarn", default = true })
 	vim.api.nvim_set_hl(0, "EditorDocumentAnswer", { link = "DiagnosticInfo", default = true })
-	vim.api.nvim_create_user_command("CopydeskDocuments", function()
-		vim.ui.select(document_list(), {
-			prompt = "Copydesk documents",
-			format_item = function(document)
-				return document.title
-					.. " · "
-					.. vim.fn.fnamemodify(document.ref.session.projectId, ":t")
-					.. " · "
-					.. document.ref.ownerId:sub(1, 8)
-					.. " · "
-					.. status(document)
-			end,
-		}, function(document)
-			if document then
-				show_document(document)
-			end
-		end)
-	end, {})
-	vim.api.nvim_create_user_command("CopydeskComment", function(options)
-		M.comment(options.line1, options.line2)
-	end, { range = true })
-	vim.api.nvim_create_user_command("CopydeskResponses", function()
-		choose_feedback(function(feedback)
-			if not feedback then
-				return
-			end
-			notify(
-				compact(
-					(feedback.summary ~= "" and feedback.summary)
-						or (feedback.reason ~= "" and feedback.reason)
-						or feedback_labels[feedback.state]
-						or feedback.state,
-					300
-				)
-					.. "\nOriginal selection: "
-					.. compact(feedback.selectedText, 140)
-			)
-		end)
-	end, {})
-	vim.api.nvim_create_user_command("CopydeskChanges", function()
-		choose_feedback(show_changes)
-	end, {})
-	vim.api.nvim_create_user_command("CopydeskCompare", M.compare, {})
-	vim.api.nvim_create_user_command("CopydeskResolve", M.resolve, {})
-	vim.api.nvim_create_user_command("CopydeskReload", function(options)
-		M.reload(options.bang)
-	end, { bang = true })
 	local lifecycle = vim.api.nvim_create_augroup("EditorInteropConnection", { clear = true })
 	vim.api.nvim_create_autocmd("VimLeavePre", { group = lifecycle, callback = M.stop })
 	vim.api.nvim_create_autocmd("WinClosed", {
@@ -935,13 +935,9 @@ function M.setup(connection)
 			state.windows[tonumber(event.match)] = nil
 		end,
 	})
-	vim.api.nvim_create_user_command("CopydeskReconnect", function()
-		M.stop()
-		M.setup()
-	end, {})
 	state.client:register(function(_, err)
 		if err then
-			notify(err.message .. "; :CopydeskReconnect after the host is available", vim.log.levels.WARN)
+			notify(err.message .. "; reconnect after the host is available", vim.log.levels.WARN)
 			return
 		end
 		for _, window in ipairs(vim.api.nvim_list_wins()) do
